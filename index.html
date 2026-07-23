@@ -151,7 +151,7 @@ svg{display:block;width:100%;overflow:visible}
 .sheet .handle{width:40px;height:4px;background:var(--line);border-radius:2px;margin:0 auto 16px}
 
 /* Toast */
-.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-80px);
+.toast{position:fixed;top:calc(16px + env(safe-area-inset-top));left:50%;transform:translateX(-50%) translateY(-140px);
   background:var(--good);color:#06251a;padding:11px 18px;border-radius:999px;font-weight:800;
   font-size:14px;z-index:200;box-shadow:var(--sh);transition:transform .35s cubic-bezier(.2,.9,.2,1);
   display:flex;align-items:center;gap:8px}
@@ -253,6 +253,56 @@ svg{display:block;width:100%;overflow:visible}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 @keyframes introUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 
+/* Onboarding / configuración inicial */
+.ob{position:fixed;inset:0;z-index:250;background:var(--bg);overflow-y:auto;
+  padding:calc(22px + env(safe-area-inset-top)) 18px calc(22px + env(safe-area-inset-bottom))}
+.ob-inner{max-width:520px;margin:0 auto}
+.ob-emoji{font-size:44px;text-align:center;margin-bottom:12px}
+.ob h2{font-size:22px;margin-bottom:6px}
+.ob-sub{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.4}
+.ob-steps{display:flex;gap:6px;margin-bottom:20px}
+.ob-dot{flex:1;height:4px;border-radius:2px;background:var(--line);transition:.3s}
+.ob-dot.on{background:var(--acc)}
+.ob-actions{display:flex;gap:10px;margin-top:22px}
+.ob-actions .btn{flex:1}
+.ob-skipall{display:block;width:100%;text-align:center;background:none;border:none;
+  color:var(--muted2);font-size:12px;margin-top:14px;cursor:pointer;text-decoration:underline}
+.ob-day{margin-bottom:14px}
+.ob-day label{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:5px}
+.ob-day textarea{min-height:64px}
+.ob-li{display:flex;align-items:center;gap:10px;padding:10px;border-radius:11px;
+  background:var(--card2);border:1px solid var(--line);margin-bottom:8px}
+.ob-li .t{flex:1;font-size:14px;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ob-addrow{display:flex;gap:8px;margin-top:10px}
+.ob-addrow input{flex:1}
+.ob-addbtn{width:46px;flex-shrink:0;background:var(--acc);border:none;color:#fff;border-radius:11px;font-size:22px;font-weight:700;cursor:pointer}
+
+/* Coach */
+.coach-ex{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.coach-ex-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px}
+.coach-ex-h b{font-size:15px}
+.coach-tip{font-size:13px;color:var(--muted);margin-bottom:7px;line-height:1.45}
+.coach-alts{font-size:12px;color:var(--txt);line-height:1.4}
+.coach-alts b{color:var(--muted2)}
+.coach-disc{font-size:11px;color:var(--muted2);margin-bottom:12px;font-style:italic}
+
+/* Wins */
+.win-explain{background:rgba(52,211,153,.09);border-left:3px solid var(--obj);border-radius:0 10px 10px 0;
+  padding:11px 13px;font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:12px}
+.win-explain b{color:var(--txt)}
+.win-add{display:flex;gap:8px;margin-bottom:14px}
+.win-add input{flex:1}
+.win-add button{width:46px;flex-shrink:0;background:var(--obj);color:#06251a;border:none;border-radius:11px;
+  font-size:22px;font-weight:700;cursor:pointer}
+.win-add button:active{transform:scale(.92)}
+.win-count{font-size:13px;color:var(--obj);font-weight:800;margin-bottom:10px}
+.win-item{display:flex;align-items:flex-start;gap:11px;padding:11px;border-radius:12px;
+  background:var(--card2);border:1px solid var(--line);margin-bottom:8px}
+.win-emoji{font-size:18px;flex-shrink:0;line-height:1.3}
+.win-body{flex:1;min-width:0}
+.win-text{font-size:14px;font-weight:600;white-space:normal;word-break:break-word}
+.win-date{font-size:11px;color:var(--muted2);margin-top:3px}
+
 /* Calendario */
 .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .cal-title{font-weight:800;font-size:16px;text-transform:capitalize}
@@ -313,6 +363,7 @@ svg{display:block;width:100%;overflow:visible}
         <div class="title">Mis hábitos</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
+        <button class="gear" onclick="openHabitStats()" aria-label="Estadísticas">📊</button>
         <button class="gear" onclick="openSettings()" aria-label="Ajustes">⚙</button>
         <div class="lvlbadge">
           <div class="n" id="lvlNum">1</div>
@@ -359,6 +410,7 @@ svg{display:block;width:100%;overflow:visible}
       <button class="btn ghost sm" onclick="openRoutineEdit()">Editar rutina</button>
     </div>
     <div class="days" id="dayPills"></div>
+    <button class="btn ghost block" style="margin-bottom:14px" onclick="openCoach()">🤖 Coach — ejercicios, alternativas y comida</button>
     <div class="card">
       <div class="section-title" style="margin:0 0 10px"><h2 style="font-size:16px" id="gymDayTitle">Lunes</h2>
         <span class="sub" style="margin:0" id="gymDayMuscles"></span></div>
@@ -407,6 +459,19 @@ svg{display:block;width:100%;overflow:visible}
     <div class="sub" style="margin:-6px 0 14px">Tu lista de metas. Sin prisa, sin fecha.</div>
     <div id="goalList"></div>
 
+    <div class="section-title" style="margin-top:22px"><h2>🏆 Wins del día</h2></div>
+    <div class="win-explain">
+      <b>¿Qué es una win?</b> Algo bueno que te ha pasado hoy — no hace falta que sea grande.
+      Cualquier cosa que haya hecho que el día valiera la pena: un buen entreno, una charla, algo
+      que te salió bien, un rato tranquilo… Apúntala (opcional) y, con el tiempo, podrás mirar atrás
+      y recordar todo lo bueno que te ha ido pasando. 🎉
+    </div>
+    <div class="win-add">
+      <input id="winInput" placeholder="La win de hoy…" autocomplete="off">
+      <button onclick="submitWin()">＋</button>
+    </div>
+    <div id="winsList"></div>
+
     <div class="section-title" style="margin-top:22px"><h2>📅 Calendario</h2></div>
     <div class="sub" style="margin:-6px 0 14px">Organiza vacaciones, viajes o eventos. Toca un día para escribir.</div>
     <div class="card" id="calendarCard"></div>
@@ -453,6 +518,9 @@ svg{display:block;width:100%;overflow:visible}
 <!-- Modal root -->
 <div id="modalRoot"></div>
 
+<!-- Onboarding / configuración inicial -->
+<div id="onboarding" class="ob hidden"></div>
+
 <script>
 /* ============================================================
    MiApp — PWA local. Todo en localStorage. Sin nube.
@@ -480,6 +548,7 @@ const DEFAULT_STATE = {
   tasks:[],                // tareas del día (sin XP): { id,text,done,due }
   tasksDate:null,          // día al que pertenecen las tareas SIN fecha (se borran al cambiar de día)
   calendar:{},             // notas del calendario: { 'YYYY-MM-DD': 'texto' }
+  wins:[],                 // diario de wins: { id,text,date }
   completions:{},          // { 'YYYY-MM-DD': [habitId,...] }
   workouts:[],             // { id,date,day,exercises:[{name,sets:[{weight,reps}]}],notes }
   routine:JSON.parse(JSON.stringify(DEFAULT_ROUTINE)),
@@ -496,6 +565,7 @@ const DEFAULT_STATE = {
   },
   finPeriod:'month',
   restTime:60,             // descanso entre series (segundos)
+  onboarded:false,         // ya pasó por la configuración inicial
   seededSamples:false
 };
 
@@ -511,7 +581,9 @@ function load(){
   S.abs = S.abs || {days:["Lunes","Miércoles","Viernes"]};
   S.tasks = S.tasks || [];
   S.calendar = S.calendar || {};
+  S.wins = S.wins || [];
   if(typeof S.restTime!=='number') S.restTime = 60;
+  if(typeof S.onboarded!=='boolean') S.onboarded = true; // usuarios existentes no ven el asistente
   resetTasksIfNewDay();
 }
 // Al cambiar de día borra las tareas SIN fecha; las que tienen fecha se conservan
@@ -759,7 +831,10 @@ function renderGymHistory(){
     return `<div class="card">
       <div class="section-title" style="margin:0 0 8px">
         <h2 style="font-size:15px">${w.day} · ${fmtDate(w.date)}</h2>
-        <span class="del" onclick="delWorkout('${w.id}')">×</span></div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <span class="miniedit" onclick="openEditWorkout('${w.id}')">editar</span>
+          <span class="del" onclick="delWorkout('${w.id}')">×</span>
+        </div></div>
       ${exs}
       ${w.notes?`<div class="note-b">📝 ${esc(w.notes)}</div>`:''}
     </div>`;
@@ -798,7 +873,7 @@ function toggleGoal(id){ const g=S.goals.find(x=>x.id===id); g.done=!g.done; sav
 function delGoal(id){ S.goals=S.goals.filter(g=>g.id!==id); save(); renderGoals(); }
 function renderGoals(){
   const el=$('#goalList');
-  if(S.goals.length===0){ el.innerHTML='<div class="empty"><div class="ico">🎯</div>Sin objetivos aún. Pulsa ＋ para añadir uno.</div>'; renderCalendar(); return; }
+  if(S.goals.length===0){ el.innerHTML='<div class="empty"><div class="ico">🎯</div>Sin objetivos aún. Pulsa ＋ para añadir uno.</div>'; renderWins(); renderCalendar(); return; }
   const pend=S.goals.filter(g=>!g.done), done=S.goals.filter(g=>g.done);
   const item = g=>`<div class="hitem ${g.done?'done':''}">
       <div class="check ${g.done?'on':''}" onclick="toggleGoal('${g.id}')">${g.done?'✓':''}</div>
@@ -806,7 +881,25 @@ function renderGoals(){
       <div class="del" onclick="delGoal('${g.id}')">×</div></div>`;
   el.innerHTML = pend.map(item).join('') +
     (done.length?`<div class="sub" style="margin:16px 0 8px">Completados (${done.length})</div>`+done.map(item).join(''):'');
+  renderWins();
   renderCalendar();
+}
+
+/* ---- Wins del día ---- */
+function submitWin(){ const v=$('#winInput').value; if(!v.trim())return; S.wins.push({id:uid(),text:v.trim(),date:todayKey()}); $('#winInput').value=''; save(); renderWins(); }
+function delWin(id){ S.wins=S.wins.filter(w=>w.id!==id); save(); renderWins(); }
+function renderWins(){
+  const el=$('#winsList'); if(!el) return;
+  if(S.wins.length===0){
+    el.innerHTML='<div class="empty" style="padding:18px"><div class="ico">🏆</div>Aún no has apuntado ninguna win. Empieza hoy.</div>';
+    return;
+  }
+  const total=S.wins.length;
+  const items=[...S.wins].reverse().map(w=>`<div class="win-item">
+    <div class="win-emoji">🏆</div>
+    <div class="win-body"><div class="win-text">${esc(w.text)}</div><div class="win-date">${fmtDate(w.date)}</div></div>
+    <div class="del" onclick="delWin('${w.id}')">×</div></div>`).join('');
+  el.innerHTML=`<div class="win-count">${total} win${total!==1?'s':''} acumulada${total!==1?'s':''} 🎉</div>`+items;
 }
 
 /* ---- Calendario (Objetivos) ---- */
@@ -928,7 +1021,7 @@ function renderFinance(){
     const dot = isIn?'var(--good)': catColor(t.catId);
     return `<div class="txitem">
       <div class="txdot" style="background:${dot}"></div>
-      <div class="txinfo"><div class="txcat">${c?esc(c.name):'—'}</div>
+      <div class="txinfo" onclick="openTxForm('${t.id}')" style="cursor:pointer"><div class="txcat">${c?esc(c.name):'—'}</div>
         <div class="txnote">${t.note?esc(t.note):''} <span class="txdate">${fmtDate(t.date)}</span></div></div>
       <div class="txamt ${isIn?'in':'ex'}">${isIn?'+':'−'}${eur(t.amount)}</div>
       <div class="del" onclick="delTx('${t.id}')">×</div>
@@ -1004,13 +1097,21 @@ function submitGoal(){ const t=$('#gText').value; if(!t.trim())return; addGoal(t
 /* --- Log workout --- */
 let logDraft=[];
 function openLogWorkout(){
+  window._editWorkoutId=null;
   const day = gymSelDay || currentWorkoutDay();
   const exs=[...(S.routine[day]||[])];
   if(S.abs.days.includes(day)) exs.push('Abdominales');
   logDraft = exs.map(name=>({name, sets:[]}));
   renderLogModal(day);
 }
-function renderLogModal(day){
+function openEditWorkout(id){
+  const w=S.workouts.find(x=>x.id===id); if(!w) return;
+  window._editWorkoutId=id;
+  logDraft = w.exercises.map(e=>({name:e.name, sets:e.sets.map(s=>({weight:s.weight,reps:s.reps}))}));
+  renderLogModal(w.day, w.notes);
+}
+function renderLogModal(day, notesVal){
+  window._logDay=day;
   const body = logDraft.map((e,ei)=>{
     const sets = e.sets.map((s,si)=>`<div class="row" style="margin-bottom:6px;align-items:center">
         <input type="number" inputmode="decimal" placeholder="kg" value="${s.weight}" onchange="updSet(${ei},${si},'weight',this.value)">
@@ -1025,19 +1126,27 @@ function renderLogModal(day){
       <button class="btn ghost sm" onclick="addSet(${ei})">+ Serie</button>
     </div>`;
   }).join('');
-  modal(`<h3>Registrar entreno · ${day}</h3>
+  const editing = !!window._editWorkoutId;
+  modal(`<h3>${editing?'Editar entreno':'Registrar entreno'} · ${day}</h3>
     ${body}
     <div class="field" style="margin-top:14px"><label>Notas de la sesión</label>
-      <textarea id="wNotes" placeholder="Ej: buena forma, subí peso en press"></textarea></div>
-    <button class="btn block" style="background:var(--gym)" onclick="submitWorkout('${day}')">Guardar entreno</button>`);
+      <textarea id="wNotes" placeholder="Ej: buena forma, subí peso en press">${notesVal?esc(notesVal):''}</textarea></div>
+    <button class="btn block" style="background:var(--gym)" onclick="submitWorkout('${day}')">${editing?'Guardar cambios':'Guardar entreno'}</button>`);
 }
-function addSet(ei){ logDraft[ei].sets.push({weight:'',reps:''}); const n=$('#wNotes')?$('#wNotes').value:''; renderLogModal(gymSelDay); if($('#wNotes'))$('#wNotes').value=n; }
-function rmSet(ei,si){ const n=$('#wNotes')?$('#wNotes').value:''; logDraft[ei].sets.splice(si,1); renderLogModal(gymSelDay); if($('#wNotes'))$('#wNotes').value=n; }
+function addSet(ei){ logDraft[ei].sets.push({weight:'',reps:''}); const n=$('#wNotes')?$('#wNotes').value:''; renderLogModal(window._logDay, n); }
+function rmSet(ei,si){ const n=$('#wNotes')?$('#wNotes').value:''; logDraft[ei].sets.splice(si,1); renderLogModal(window._logDay, n); }
 function updSet(ei,si,f,v){ logDraft[ei].sets[si][f]= f==='weight'?parseFloat(v)||0:parseInt(v)||0; }
 function submitWorkout(day){
   const notes = $('#wNotes')?$('#wNotes').value:'';
   const clean = logDraft.map(e=>({name:e.name, sets:e.sets.filter(s=>s.weight>0||s.reps>0)}));
-  if(saveWorkout(day, clean, notes)) closeModal();
+  if(window._editWorkoutId){
+    const w=S.workouts.find(x=>x.id===window._editWorkoutId);
+    const exercises=clean.filter(e=>e.sets.length);
+    if(exercises.length===0){ toast('Añade al menos una serie',false); return; }
+    w.exercises=exercises; w.notes=notes.trim(); save(); toast('Entreno actualizado'); window._editWorkoutId=null; renderGym(); closeModal();
+  } else {
+    if(saveWorkout(day, clean, notes)) closeModal();
+  }
 }
 
 /* --- Edit routine --- */
@@ -1107,22 +1216,28 @@ function addCat(){
 }
 
 /* --- Add transaction --- */
-function openAddTx(){
-  const opts = S.finance.categories.map(c=>`<option value="${c.id}">${c.type==='income'?'＋ ':'－ '}${esc(c.name)}</option>`).join('');
-  modal(`<h3>Nuevo movimiento</h3>
+function openAddTx(){ openTxForm(null); }
+function openTxForm(id){
+  const t = id ? S.finance.tx.find(x=>x.id===id) : null;
+  const opts = S.finance.categories.map(c=>`<option value="${c.id}" ${t&&t.catId===c.id?'selected':''}>${c.type==='income'?'＋ ':'－ '}${esc(c.name)}</option>`).join('');
+  modal(`<h3>${t?'Editar movimiento':'Nuevo movimiento'}</h3>
     <div class="field"><label>Categoría</label><select id="txCat">${opts}</select></div>
     <div class="row">
-      <div class="field"><label>Importe (€)</label><input id="txAmt" type="number" inputmode="decimal" placeholder="0"></div>
-      <div class="field"><label>Fecha</label><input id="txDate" type="date" value="${todayKey()}"></div>
+      <div class="field"><label>Importe (€)</label><input id="txAmt" type="number" inputmode="decimal" placeholder="0" value="${t?t.amount:''}"></div>
+      <div class="field"><label>Fecha</label><input id="txDate" type="date" value="${t?t.date:todayKey()}"></div>
     </div>
-    <div class="field"><label>Nota (opcional)</label><input id="txNote" placeholder="Ej: compra semanal"></div>
-    <button class="btn block warn" onclick="submitTx()">Guardar movimiento</button>`);
+    <div class="field"><label>Nota (opcional)</label><input id="txNote" placeholder="Ej: compra semanal" value="${t?esc(t.note):''}"></div>
+    <button class="btn block warn" onclick="submitTx('${id||''}')">${t?'Guardar cambios':'Guardar movimiento'}</button>`);
   setTimeout(()=>$('#txAmt').focus(),100);
 }
-function submitTx(){
+function submitTx(id){
   const cat=$('#txCat').value, amt=parseFloat($('#txAmt').value), note=$('#txNote').value, date=$('#txDate').value;
   if(!amt||amt<=0){ $('#txAmt').focus(); return; }
-  addTx(cat, amt, note, date); closeModal();
+  if(id){
+    const t=S.finance.tx.find(x=>x.id===id);
+    if(t){ t.catId=cat; t.amount=Math.abs(amt); t.note=(note||'').trim(); t.date=date||todayKey(); save(); renderFinance(); }
+  } else { addTx(cat, amt, note, date); }
+  closeModal();
 }
 
 /* ============================================================
@@ -1166,6 +1281,40 @@ function lineChart(values, labels, unit, color){
 }
 
 /* ============================================================
+   ESTADÍSTICAS DE HÁBITOS
+   ============================================================ */
+function dayKeyOffset(n){ const d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function openHabitStats(){
+  const tk=todayKey();
+  const total=S.habits.length;
+  const doneToday=(S.completions[tk]||[]).filter(id=>S.habits.some(h=>h.id===id)).length;
+  const pctToday= total ? Math.round(doneToday/total*100) : 0;
+  const vals=[], labels=[];
+  for(let i=13;i>=0;i--){
+    const k=dayKeyOffset(-i);
+    const done=(S.completions[k]||[]).length;
+    vals.push(total ? Math.min(100, Math.round(done/total*100)) : 0);
+    const d=new Date(k+'T00:00:00'); labels.push(d.getDate()+'/'+(d.getMonth()+1));
+  }
+  // racha: días consecutivos con al menos 1 hábito hecho
+  let streak=0, d=new Date();
+  if((S.completions[tk]||[]).length===0) d.setDate(d.getDate()-1);
+  while(true){ const k=d.toISOString().slice(0,10); if((S.completions[k]||[]).length>=1){ streak++; d.setDate(d.getDate()-1); } else break; }
+  const totalDone=Object.values(S.completions).reduce((a,arr)=>a+arr.length,0);
+  modal(`<h3>📊 Estadísticas de hábitos</h3>
+    <div class="statgrid" style="margin-bottom:16px">
+      <div class="stat"><div class="v">${level()}</div><div class="k">Nivel</div></div>
+      <div class="stat"><div class="v">${S.xp}</div><div class="k">XP total</div></div>
+      <div class="stat"><div class="v">${streak} 🔥</div><div class="k">Racha (días)</div></div>
+      <div class="stat"><div class="v">${pctToday}%</div><div class="k">Completado hoy</div></div>
+    </div>
+    <div class="sub" style="margin-bottom:6px">% de hábitos completados · últimos 14 días</div>
+    ${lineChart(vals, labels, '%', 'var(--acc)')}
+    <div class="sub" style="text-align:center;margin-top:10px">Total histórico: <b style="color:var(--txt)">${totalDone}</b> hábitos completados</div>
+    <button class="btn block" style="margin-top:14px" onclick="closeModal()">Cerrar</button>`);
+}
+
+/* ============================================================
    REST TIMER (descanso entre series)
    ============================================================ */
 let restTimer = {total:60, left:60, running:false, id:null, finished:false};
@@ -1195,6 +1344,7 @@ function setRest(sec){
 }
 function toggleRest(){ restTimer.running ? pauseRest() : startRest(); }
 function startRest(){
+  ensureAudio();   // desbloquea el sonido en el móvil (se pulsa con gesto del usuario)
   if(restTimer.finished || restTimer.left<=0){ restTimer.left=restTimer.total; restTimer.finished=false; }
   restTimer.running=true;
   clearInterval(restTimer.id);
@@ -1211,17 +1361,28 @@ function restDone(){
   if(navigator.vibrate) try{ navigator.vibrate([200,100,200]); }catch(e){}
   beep(); toast('¡Descanso terminado! 💪');
 }
+let audioCtx = null;
+// Se llama al pulsar Iniciar (gesto del usuario) para desbloquear el audio en el móvil
+function ensureAudio(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+  }catch(e){}
+}
 function beep(){
   try{
-    const ctx=new (window.AudioContext||window.webkitAudioContext)();
-    [0,0.22].forEach(t0=>{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    const ctx=audioCtx;
+    [0,0.28,0.56].forEach((t0,i)=>{
       const o=ctx.createOscillator(), g=ctx.createGain();
-      o.connect(g); g.connect(ctx.destination); o.type='sine'; o.frequency.value=880;
+      o.connect(g); g.connect(ctx.destination); o.type='sine';
+      o.frequency.value = i===2 ? 1175 : 880;   // el último más agudo
       const t=ctx.currentTime+t0;
       g.gain.setValueAtTime(0.0001,t);
-      g.gain.exponentialRampToValueAtTime(0.3,t+0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001,t+0.18);
-      o.start(t); o.stop(t+0.2);
+      g.gain.exponentialRampToValueAtTime(0.45,t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.24);
+      o.start(t); o.stop(t+0.26);
     });
   }catch(e){}
 }
@@ -1242,6 +1403,144 @@ function applyCustomRest(){
 }
 
 /* ============================================================
+   COACH (asistente offline: ejercicios + nutrición)
+   ============================================================ */
+const COACH = {
+  exercises: [
+    // Pecho
+    {name:'Press banca', muscle:'Pecho', tip:'Espalda apoyada, baja la barra al pecho controlando y empuja sin bloquear de golpe.', alts:['Press con mancuernas','Flexiones','Press en máquina']},
+    {name:'Press inclinado', muscle:'Pecho', tip:'Banco a 30-45°. Trabaja la parte alta del pecho.', alts:['Press inclinado en máquina','Flexiones con pies elevados']},
+    {name:'Aperturas', muscle:'Pecho', tip:'Codos algo flexionados, abre en arco y siente el estiramiento del pecho.', alts:['Cruces en polea','Peck deck (máquina)']},
+    {name:'Fondos en paralelas', muscle:'Pecho', tip:'Inclínate hacia delante para dar más al pecho; erguido da más al tríceps.', alts:['Fondos asistidos','Press en máquina','Flexiones']},
+    {name:'Flexiones', muscle:'Pecho', tip:'Cuerpo recto, baja el pecho casi al suelo. Manos algo más anchas que los hombros.', alts:['Flexiones de rodillas','Press en máquina']},
+    // Espalda
+    {name:'Dominadas', muscle:'Espalda', tip:'Lleva los codos hacia abajo y atrás, saca pecho. Sin balanceo.', alts:['Jalón al pecho','Dominadas asistidas','Remo invertido']},
+    {name:'Remo con barra', muscle:'Espalda', tip:'Tronco inclinado, espalda recta, tira de la barra al abdomen.', alts:['Remo con mancuerna','Remo en máquina','Remo en polea']},
+    {name:'Jalón al pecho', muscle:'Espalda', tip:'Tira de la barra al pecho llevando los codos abajo, sin echarte muy atrás.', alts:['Dominadas','Jalón con agarre neutro']},
+    {name:'Remo con mancuerna', muscle:'Espalda', tip:'Apoya rodilla y mano en el banco, tira de la mancuerna a la cadera.', alts:['Remo en máquina','Remo con barra']},
+    {name:'Peso muerto', muscle:'Espalda', tip:'Espalda recta siempre, empuja el suelo con los pies y sube la barra pegada a las piernas.', alts:['Peso muerto rumano','Hip thrust','Remo pesado']},
+    // Pierna
+    {name:'Sentadilla', muscle:'Pierna', tip:'Baja como si te sentaras, rodillas hacia fuera, pecho arriba. Talones en el suelo.', alts:['Prensa','Sentadilla goblet','Zancadas']},
+    {name:'Prensa', muscle:'Pierna', tip:'No bloquees las rodillas arriba, baja controlando hasta 90°.', alts:['Sentadilla','Zancadas','Hack squat']},
+    {name:'Peso muerto rumano', muscle:'Pierna', tip:'Piernas casi rectas, baja la barra pegada a las piernas notando el femoral.', alts:['Curl femoral','Buenos días','Peso muerto']},
+    {name:'Extensión de cuádriceps', muscle:'Pierna', tip:'Sube controlando y aprieta arriba 1 seg. No des tirones.', alts:['Sentadilla','Prensa','Zancadas']},
+    {name:'Curl femoral', muscle:'Pierna', tip:'Controla la bajada, no uses impulso de cadera.', alts:['Peso muerto rumano','Curl nórdico']},
+    {name:'Zancadas', muscle:'Pierna', tip:'Paso largo, baja recto y empuja con el talón delantero.', alts:['Sentadilla búlgara','Prensa','Sentadilla']},
+    {name:'Hip thrust', muscle:'Pierna', tip:'Apoya la espalda en el banco, empuja con los talones y aprieta el glúteo arriba.', alts:['Puente de glúteo','Peso muerto','Patada de glúteo']},
+    {name:'Gemelos', muscle:'Pierna', tip:'Sube al máximo de puntillas y baja estirando bien. Rango completo.', alts:['Gemelos sentado','Saltos a la comba']},
+    // Hombro
+    {name:'Press militar', muscle:'Hombro', tip:'Aprieta el abdomen, empuja la barra recta arriba sin arquear la espalda.', alts:['Press con mancuernas','Press Arnold','Press en máquina']},
+    {name:'Elevaciones laterales', muscle:'Hombro', tip:'Sube con los codos algo flexionados hasta la altura del hombro. Sin impulso.', alts:['Elevaciones en polea','Elevaciones en máquina']},
+    {name:'Elevaciones frontales', muscle:'Hombro', tip:'Sube la mancuerna al frente hasta la altura de los ojos, controlado.', alts:['Elevaciones con disco','Press militar']},
+    {name:'Pájaros', muscle:'Hombro', tip:'Inclina el tronco y abre en arco: trabaja el hombro posterior.', alts:['Face pull','Peck deck invertido']},
+    {name:'Face pull', muscle:'Hombro', tip:'Tira de la cuerda a la cara separando las manos. Ideal para postura.', alts:['Pájaros','Remo al cuello']},
+    // Bíceps
+    {name:'Curl con barra', muscle:'Bíceps', tip:'Codos pegados al cuerpo, sube sin balancear la espalda.', alts:['Curl con mancuernas','Curl en polea','Curl predicador']},
+    {name:'Curl con mancuernas', muscle:'Bíceps', tip:'Gira un poco la muñeca al subir (supinación) para apretar más el bíceps.', alts:['Curl con barra','Curl en banco inclinado']},
+    {name:'Curl martillo', muscle:'Bíceps', tip:'Agarre neutro (palmas enfrentadas). Trabaja el braquial y antebrazo.', alts:['Curl con cuerda','Curl con mancuernas']},
+    {name:'Curl concentrado', muscle:'Bíceps', tip:'Codo apoyado en el muslo, aísla el bíceps. Aprieta arriba.', alts:['Curl predicador','Curl en polea']},
+    // Tríceps
+    {name:'Extensión en polea', muscle:'Tríceps', tip:'Codos fijos pegados al cuerpo, estira abajo del todo.', alts:['Press francés','Fondos en banco','Patada de tríceps']},
+    {name:'Press francés', muscle:'Tríceps', tip:'Baja la barra hacia la frente moviendo solo el antebrazo.', alts:['Extensión en polea','Press cerrado']},
+    {name:'Fondos en banco', muscle:'Tríceps', tip:'Manos en el banco detrás, baja el cuerpo flexionando codos hacia atrás.', alts:['Fondos en paralelas','Press cerrado','Extensión en polea']},
+    {name:'Press cerrado', muscle:'Tríceps', tip:'Como press banca pero con manos juntas: mucho tríceps.', alts:['Fondos','Press francés']},
+    // Abdominales
+    {name:'Crunch', muscle:'Abdominales', tip:'Sube los hombros llevando las costillas a la cadera, sin tirar del cuello.', alts:['Crunch en máquina','Encogimientos']},
+    {name:'Plancha', muscle:'Abdominales', tip:'Cuerpo recto como una tabla, aprieta abdomen y glúteo. Aguanta el tiempo.', alts:['Plancha lateral','Rueda abdominal']},
+    {name:'Elevación de piernas', muscle:'Abdominales', tip:'Sube las piernas controlando, sin arquear la zona lumbar.', alts:['Rodillas al pecho','Crunch inverso']},
+    {name:'Rueda abdominal', muscle:'Abdominales', tip:'Rueda hacia delante sin arquear la espalda; vuelve con el abdomen.', alts:['Plancha','Elevación de piernas']},
+    {name:'Russian twist', muscle:'Abdominales', tip:'Sentado, gira el tronco de lado a lado. Trabaja los oblicuos.', alts:['Plancha lateral','Giros con polea']}
+  ],
+  nutrition: {
+    'Ganar músculo': [
+      'Superávit ligero: come un poco más de lo que gastas al día.',
+      'Proteína alta: ~1,6-2 g por kg de tu peso corporal al día.',
+      'Reparte la proteína en 3-4 comidas (huevos, pollo, pescado, carne, legumbres, lácteos).',
+      'Carbohidratos para entrenar fuerte: arroz, pasta, patata, avena, fruta.',
+      'Duerme 7-8h: el músculo crece descansando, no solo entrenando.'
+    ],
+    'Perder grasa': [
+      'Déficit moderado: come algo menos de lo que gastas, sin pasarte de agresivo.',
+      'Mantén la proteína alta para no perder músculo mientras adelgazas.',
+      'Llénate con verdura y alimentos saciantes (fibra, proteína).',
+      'Reduce ultraprocesados, fritos y bebidas azucaradas.',
+      'Constancia > perfección: un déficit pequeño sostenible funciona mejor.'
+    ],
+    'Mantenimiento': [
+      'Come según tu gasto: ni superávit ni déficit.',
+      'Mantén proteína y comida variada para no perder músculo.',
+      'Hidrátate: apunta a 2-2,5 L de agua al día.',
+      'Regla 80/20: 80% comida real, 20% caprichos.',
+      'Distingue hambre real de ansiedad o aburrimiento.'
+    ]
+  }
+};
+let _coachTab='ex', _coachMuscle='', _coachObjective='Ganar músculo';
+function openCoach(){
+  _coachTab='ex'; _coachMuscle='';
+  modal(`<h3>🤖 Coach</h3>
+    <button class="btn block" style="margin-bottom:14px;background:#10a37f" onclick="askAI()">💬 Preguntar a una IA</button>
+    <div class="pillrow" style="margin-bottom:14px">
+      <div class="chip" id="ctEx" onclick="coachTab('ex')">Ejercicios</div>
+      <div class="chip" id="ctFood" onclick="coachTab('food')">Comida</div>
+    </div>
+    <div id="coachBody"></div>`);
+  renderCoach();
+}
+function askAI(){
+  const nombre = S.userName ? (' Me llamo ' + S.userName + '.') : '';
+  const prompt = 'Eres mi entrenador personal y nutricionista.' + nombre + ' Entreno en el gimnasio. Ayúdame con esto: ';
+  const url = 'https://chatgpt.com/?q=' + encodeURIComponent(prompt);
+  window.open(url, '_blank');
+}
+function coachTab(t){ _coachTab=t; renderCoach(); }
+function renderCoach(){
+  const on=$('#ctEx'), of=$('#ctFood');
+  if(on) on.classList.toggle('on',_coachTab==='ex');
+  if(of) of.classList.toggle('on',_coachTab==='food');
+  const body=$('#coachBody'); if(!body) return;
+  if(_coachTab==='ex'){
+    const muscles=[...new Set(COACH.exercises.map(e=>e.muscle))];
+    body.innerHTML=`
+      <input id="coachSearch" placeholder="Busca un ejercicio…" autocomplete="off" oninput="renderCoachResults()" style="margin-bottom:10px">
+      <div class="pillrow" style="margin-bottom:12px">
+        <div class="chip ${!_coachMuscle?'on':''}" onclick="coachMuscle('')">Todos</div>
+        ${muscles.map(m=>`<div class="chip ${_coachMuscle===m?'on':''}" onclick="coachMuscle('${m}')">${m}</div>`).join('')}
+      </div>
+      <div id="coachResults"></div>`;
+    renderCoachResults();
+  }else{
+    const objs=Object.keys(COACH.nutrition);
+    body.innerHTML=`
+      <div class="coach-disc">Consejos generales, no sustituyen a un nutricionista.</div>
+      <div class="pillrow" style="margin-bottom:14px">
+        ${objs.map(o=>`<div class="chip ${_coachObjective===o?'on':''}" onclick="coachObjective('${o}')">${o}</div>`).join('')}
+      </div>
+      <div id="coachFood"></div>`;
+    renderCoachFood();
+  }
+}
+function coachMuscle(m){ _coachMuscle=m; renderCoach(); }
+function coachObjective(o){ _coachObjective=o; renderCoach(); }
+function renderCoachResults(){
+  const el=$('#coachResults'); if(!el) return;
+  const q=(($('#coachSearch')||{}).value||'').toLowerCase().trim();
+  let list=COACH.exercises;
+  if(_coachMuscle) list=list.filter(e=>e.muscle===_coachMuscle);
+  if(q) list=list.filter(e=>e.name.toLowerCase().includes(q)||e.muscle.toLowerCase().includes(q));
+  if(!list.length){ el.innerHTML='<div class="empty" style="padding:16px">Sin resultados. Prueba otra palabra o músculo.</div>'; return; }
+  el.innerHTML=list.map(e=>`<div class="coach-ex">
+    <div class="coach-ex-h"><b>${esc(e.name)}</b><span class="tag simple">${esc(e.muscle)}</span></div>
+    <div class="coach-tip">💡 ${esc(e.tip)}</div>
+    <div class="coach-alts"><b>Alternativas:</b> ${e.alts.map(a=>esc(a)).join(' · ')}</div>
+  </div>`).join('');
+}
+function renderCoachFood(){
+  const el=$('#coachFood'); if(!el) return;
+  el.innerHTML=(COACH.nutrition[_coachObjective]||[]).map(t=>`<div class="coach-tip" style="margin-bottom:9px">• ${esc(t)}</div>`).join('');
+}
+
+/* ============================================================
    SETTINGS / BACKUP
    ============================================================ */
 function openSettings(){
@@ -1257,6 +1556,7 @@ function openSettings(){
     </div>
     <div class="field" style="margin-bottom:16px"><label>Tu nombre (aparece en la intro)</label>
       <input id="nameEdit" value="${esc(S.userName||'')}" maxlength="20" onchange="updName(this.value)"></div>
+    <button class="btn block ghost" style="margin-bottom:10px" onclick="closeModal();startOnboarding()">🚀 Configuración rápida (rellenar todo)</button>
     <button class="btn block good" onclick="exportData()">⬇ Exportar copia de seguridad</button>
     <div class="sub" style="margin:14px 0 6px">Restaurar desde una copia</div>
     <button class="btn block ghost" onclick="document.getElementById('importFile').click()">⬆ Importar copia</button>
@@ -1300,6 +1600,137 @@ function importData(input){
   };
   reader.readAsText(file);
 }
+
+/* ============================================================
+   ONBOARDING / CONFIGURACIÓN INICIAL (saltable)
+   ============================================================ */
+let obStep = 0;
+function startOnboarding(){ obStep=0; $('#onboarding').classList.remove('hidden'); renderOnboarding(); }
+function finishOnboarding(){ S.onboarded=true; save(); $('#onboarding').classList.add('hidden'); $('#onboarding').innerHTML=''; go(current||'habits'); }
+function obGo(n){ obStep=n; renderOnboarding(); window.scrollTo(0,0); $('#onboarding').scrollTop=0; }
+function obDots(active){
+  return `<div class="ob-steps">${[1,2,3,4].map(i=>`<div class="ob-dot ${i<=active?'on':''}"></div>`).join('')}</div>`;
+}
+function renderOnboarding(){
+  const el=$('#onboarding');
+  if(obStep===0){
+    el.innerHTML=`<div class="ob-inner" style="padding-top:8vh">
+      <div class="ob-emoji">🚀</div>
+      <h2 style="text-align:center">Configura tu app</h2>
+      <p class="ob-sub" style="text-align:center">Rellena de una vez tu rutina de gym, hábitos, objetivos y finanzas. Podrás saltarte cualquier paso o todo, y cambiarlo luego cuando quieras.</p>
+      <button class="btn block" onclick="obGo(1)">Empezar configuración</button>
+      <button class="ob-skipall" onclick="finishOnboarding()">Saltar todo, lo hago luego</button>
+    </div>`;
+    return;
+  }
+  if(obStep===1){ // GYM
+    const days=WORKOUT_DAYS.map((d,i)=>`<div class="ob-day">
+      <label>${d}</label>
+      <textarea id="ob_rt_${i}" placeholder="Un ejercicio por línea (vacío = descanso)">${(S.routine[d]||[]).join('\n')}</textarea>
+    </div>`).join('');
+    el.innerHTML=`<div class="ob-inner">${obDots(1)}
+      <h2>💪🏽 Rutina de gym</h2>
+      <p class="ob-sub">Escribe tus ejercicios de cada día, uno por línea. Deja vacío los días de descanso.</p>
+      ${days}
+      <div class="ob-day"><label>Días de abdominales</label>
+        <div class="pillrow" id="obAbs">${WORKOUT_DAYS.map(d=>`<div class="chip ${S.abs.days.includes(d)?'on gym':''}" onclick="obToggleAbs('${d}')">${d.slice(0,3)}</div>`).join('')}</div></div>
+      <div class="ob-actions">
+        <button class="btn ghost" onclick="obSaveGym();obGo(2)">Saltar</button>
+        <button class="btn gym" onclick="obSaveGym();obGo(2)">Siguiente</button>
+      </div>
+      <button class="ob-skipall" onclick="finishOnboarding()">Saltar todo</button></div>`;
+    return;
+  }
+  if(obStep===2){ // HÁBITOS
+    const list=S.habits.map(h=>`<div class="ob-li">
+      <span class="tag ${h.diff==='good'?'good':'simple'}">${h.diff==='good'?'+10':'+5'}</span>
+      <span class="t">${esc(h.name)}</span>
+      <span class="del" onclick="obDelHabit('${h.id}')">×</span></div>`).join('') || '<div class="ob-sub">Aún no hay hábitos.</div>';
+    el.innerHTML=`<div class="ob-inner">${obDots(2)}
+      <h2>✅ Hábitos diarios</h2>
+      <p class="ob-sub">Los que quieres cumplir cada día (dan XP). Añade los que quieras.</p>
+      ${list}
+      <div class="pillrow" style="margin-top:12px">
+        <div class="chip on" id="obhS" onclick="obPickDiff('simple')">Simple · +5</div>
+        <div class="chip" id="obhG" onclick="obPickDiff('good')">Bueno · +10</div>
+      </div>
+      <div class="ob-addrow">
+        <input id="obHabitName" placeholder="Ej: Beber 2L de agua" autocomplete="off">
+        <button class="ob-addbtn" onclick="obAddHabit()">＋</button>
+      </div>
+      <div class="ob-actions">
+        <button class="btn ghost" onclick="obGo(3)">Saltar</button>
+        <button class="btn" onclick="obGo(3)">Siguiente</button>
+      </div>
+      <button class="ob-skipall" onclick="finishOnboarding()">Saltar todo</button></div>`;
+    return;
+  }
+  if(obStep===3){ // OBJETIVOS
+    const list=S.goals.map(g=>`<div class="ob-li">
+      <span class="t" style="white-space:normal">${esc(g.text)}</span>
+      <span class="del" onclick="obDelGoal('${g.id}')">×</span></div>`).join('') || '<div class="ob-sub">Aún no hay objetivos.</div>';
+    el.innerHTML=`<div class="ob-inner">${obDots(3)}
+      <h2>🎯 Objetivos a largo plazo</h2>
+      <p class="ob-sub">Metas sin prisa. Añade las que quieras.</p>
+      ${list}
+      <div class="ob-addrow">
+        <input id="obGoalText" placeholder="Ej: Ahorrar para un viaje" autocomplete="off">
+        <button class="ob-addbtn" style="background:var(--obj);color:#06251a" onclick="obAddGoal()">＋</button>
+      </div>
+      <div class="ob-actions">
+        <button class="btn ghost" onclick="obGo(4)">Saltar</button>
+        <button class="btn" style="background:var(--obj);color:#06251a" onclick="obGo(4)">Siguiente</button>
+      </div>
+      <button class="ob-skipall" onclick="finishOnboarding()">Saltar todo</button></div>`;
+    return;
+  }
+  if(obStep===4){ // FINANZAS
+    const list=S.finance.categories.map(c=>`<div class="ob-li">
+      <span class="t">${esc(c.name)}</span>
+      <span class="ob-sub" style="margin:0">${c.type==='income'?'Ingreso':(c.limit?'Límite '+eur(c.limit):'Gasto')}</span>
+      <span class="del" onclick="obDelCat('${c.id}')">×</span></div>`).join('') || '<div class="ob-sub">Aún no hay categorías.</div>';
+    el.innerHTML=`<div class="ob-inner">${obDots(4)}
+      <h2>💸 Finanzas</h2>
+      <p class="ob-sub">Tus categorías de gasto/ingreso. Pon un límite a los gastos si quieres.</p>
+      ${list}
+      <div class="pillrow" style="margin-top:12px">
+        <div class="chip on" id="obcE" onclick="obPickCatType('expense')">Gasto</div>
+        <div class="chip" id="obcI" onclick="obPickCatType('income')">Ingreso</div>
+      </div>
+      <div class="ob-addrow">
+        <input id="obCatName" placeholder="Nombre" autocomplete="off">
+        <input id="obCatLimit" type="number" inputmode="decimal" placeholder="límite €" style="max-width:110px">
+        <button class="ob-addbtn" style="background:var(--fin);color:#3a2600" onclick="obAddCat()">＋</button>
+      </div>
+      <div class="ob-actions">
+        <button class="btn" style="flex:1" onclick="finishOnboarding()">¡Listo! Empezar 🎉</button>
+      </div></div>`;
+    return;
+  }
+}
+// gym
+function obToggleAbs(d){
+  const i=S.abs.days.indexOf(d); if(i>=0)S.abs.days.splice(i,1); else S.abs.days.push(d);
+  $('#obAbs').innerHTML = WORKOUT_DAYS.map(x=>`<div class="chip ${S.abs.days.includes(x)?'on gym':''}" onclick="obToggleAbs('${x}')">${x.slice(0,3)}</div>`).join('');
+}
+function obSaveGym(){
+  WORKOUT_DAYS.forEach((d,i)=>{ const ta=$('#ob_rt_'+i); if(ta) S.routine[d]=ta.value.split('\n').map(x=>x.trim()).filter(Boolean); });
+  save();
+}
+// hábitos
+let _obDiff='simple';
+function obPickDiff(v){ _obDiff=v; $('#obhS').classList.toggle('on',v==='simple'); $('#obhG').classList.toggle('on',v==='good'); }
+function obAddHabit(){ const n=$('#obHabitName').value.trim(); if(!n)return; S.habits.push({id:uid(),name:n,diff:_obDiff,type:'daily'}); save(); renderOnboarding(); }
+function obDelHabit(id){ S.habits=S.habits.filter(h=>h.id!==id); save(); renderOnboarding(); }
+// objetivos
+function obAddGoal(){ const t=$('#obGoalText').value.trim(); if(!t)return; S.goals.push({id:uid(),text:t,done:false}); save(); renderOnboarding(); }
+function obDelGoal(id){ S.goals=S.goals.filter(g=>g.id!==id); save(); renderOnboarding(); }
+// finanzas
+let _obCatType='expense';
+function obPickCatType(v){ _obCatType=v; $('#obcE').classList.toggle('on',v==='expense'); $('#obcI').classList.toggle('on',v==='income'); }
+function obAddCat(){ const n=$('#obCatName').value.trim(); if(!n)return; const lim=parseFloat($('#obCatLimit').value)||0;
+  S.finance.categories.push({id:uid(),name:n,type:_obCatType,limit:_obCatType==='expense'?lim:0}); save(); renderOnboarding(); }
+function obDelCat(id){ S.finance.categories=S.finance.categories.filter(c=>c.id!==id); save(); renderOnboarding(); }
 
 /* ============================================================
    SPLASH / INTRO
@@ -1366,7 +1797,7 @@ function playIntro(){
   // fade out and reveal app
   setTimeout(()=>{
     $('#splash').classList.add('gone');
-    setTimeout(()=>$('#splash').remove(), 650);
+    setTimeout(()=>{ $('#splash').remove(); if(!S.onboarded) startOnboarding(); }, 650);
   }, 3600);
 }
 function startSplash(){
