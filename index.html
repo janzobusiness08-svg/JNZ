@@ -1159,31 +1159,12 @@ function submitWorkout(day){
 
 /* --- Edit routine --- */
 function openRoutineEdit(){
-  const body = WORKOUT_DAYS.map(d=>`<div class="field">
-      <label>${d} ${S.abs.days.includes(d)?'· 🔥 Abs':''}</label>
-      <textarea id="rt_${d}" style="min-height:80px">${(S.routine[d]||[]).join('\n')}</textarea>
-    </div>`).join('');
+  _obGymDay = (gymSelDay && S.routine[gymSelDay]!==undefined) ? gymSelDay : 'Lunes';
+  if(!_obGymMuscle) _obGymMuscle='Pecho';
   modal(`<h3>Editar rutina</h3>
-    <div class="sub">Un ejercicio por línea. Se guarda por día.</div>
-    ${body}
-    <div class="field"><label>Días de abdominales (3/sem)</label>
-      <div class="pillrow" id="absPills">${WORKOUT_DAYS.map(d=>
-        `<div class="chip ${S.abs.days.includes(d)?'on gym':''}" onclick="toggleAbs('${d}')">${d.slice(0,3)}</div>`).join('')}</div></div>
-    <button class="btn block" style="background:var(--gym)" onclick="submitRoutine()">Guardar rutina</button>`);
-}
-function toggleAbs(d){
-  const i=S.abs.days.indexOf(d);
-  if(i>=0) S.abs.days.splice(i,1); else S.abs.days.push(d);
-  // re-render pills only
-  $('#absPills').innerHTML = WORKOUT_DAYS.map(x=>
-    `<div class="chip ${S.abs.days.includes(x)?'on gym':''}" onclick="toggleAbs('${x}')">${x.slice(0,3)}</div>`).join('');
-}
-function submitRoutine(){
-  WORKOUT_DAYS.forEach(d=>{
-    const v=$('#rt_'+d).value.split('\n').map(x=>x.trim()).filter(Boolean);
-    S.routine[d]=v;
-  });
-  save(); toast('Rutina actualizada'); closeModal(); renderGym();
+    <div class="sub">Elige día → músculo → toca ejercicios. O escribe uno específico. Se guarda solo.</div>
+    <div id="rbuild">${buildRoutineHTML()}</div>
+    <button class="btn block" style="background:var(--gym);margin-top:14px" onclick="closeModal();renderGym()">Hecho</button>`);
 }
 
 /* --- Category manager --- */
@@ -1644,34 +1625,10 @@ function renderOnboarding(){
     return;
   }
   if(obStep===1){ // GYM — constructor a clics
-    if(!S.routine[_obGymDay]) S.routine[_obGymDay]=[];
-    const dayEx = S.routine[_obGymDay];
-    const dayPills = WORKOUT_DAYS.map(d=>{
-      const n=(S.routine[d]||[]).length;
-      return `<div class="chip ${d===_obGymDay?'on gym':''}" onclick="obGymSelDay('${d}')">${d.slice(0,3)}${n?' · '+n:''}</div>`;
-    }).join('');
-    const selectedList = dayEx.length
-      ? dayEx.map((name,i)=>`<div class="ob-li"><span style="color:var(--muted2);font-weight:800;min-width:20px">${i+1}</span><span class="t">${esc(name)}</span><span class="del" onclick="obRemoveEx(${i})">×</span></div>`).join('')
-      : '<div class="ob-sub" style="margin:0">Día de descanso. Toca ejercicios abajo para añadir.</div>';
-    const musclePills = Object.keys(EXLIB).map(m=>`<div class="chip ${m===_obGymMuscle?'on gym':''}" onclick="obGymSelMuscle('${m}')">${m}</div>`).join('');
-    const exList = EXLIB[_obGymMuscle].map(name=>{
-      const added = dayEx.includes(name);
-      return `<div class="ob-exopt ${added?'added':''}" onclick="obToggleEx('${name}')"><span>${esc(name)}</span><span class="ob-exadd">${added?'✓':'＋'}</span></div>`;
-    }).join('');
     el.innerHTML=`<div class="ob-inner">${obDots(1)}
       <h2>💪🏽 Crea tu rutina</h2>
-      <p class="ob-sub">Elige un día → un músculo → toca los ejercicios para añadirlos en orden. Vuelve a tocarlos para quitarlos.</p>
-      <div class="pillrow" style="margin-bottom:14px">${dayPills}</div>
-      <div class="ob-daybox">
-        <div style="font-weight:800;margin-bottom:10px">${_obGymDay} · ${dayEx.length} ejercicio${dayEx.length!==1?'s':''}</div>
-        ${selectedList}
-      </div>
-      <div class="ob-sub" style="margin:16px 0 6px">Músculo</div>
-      <div class="pillrow">${musclePills}</div>
-      <div class="ob-sub" style="margin:14px 0 6px">Ejercicios de ${_obGymMuscle} — toca para añadir</div>
-      <div>${exList}</div>
-      <div class="ob-sub" style="margin:16px 0 6px">Días de abdominales</div>
-      <div class="pillrow">${WORKOUT_DAYS.map(d=>`<div class="chip ${S.abs.days.includes(d)?'on gym':''}" onclick="obAbsToggle('${d}')">${d.slice(0,3)}</div>`).join('')}</div>
+      <p class="ob-sub">Elige un día → un músculo → toca los ejercicios para añadirlos. ¿No está en la lista? Escríbelo abajo.</p>
+      <div id="rbuild">${buildRoutineHTML()}</div>
       <div class="ob-actions">
         <button class="btn ghost" onclick="obGo(2)">Saltar</button>
         <button class="btn gym" onclick="obGo(2)">Siguiente</button>
@@ -1746,17 +1703,55 @@ function renderOnboarding(){
     return;
   }
 }
-// gym — constructor a clics
-function obGymSelDay(d){ _obGymDay=d; renderOnboarding(); }
-function obGymSelMuscle(m){ _obGymMuscle=m; renderOnboarding(); }
+// gym — constructor a clics (reutilizable en config inicial y "Editar rutina")
+function buildRoutineHTML(){
+  if(!S.routine[_obGymDay]) S.routine[_obGymDay]=[];
+  const dayEx = S.routine[_obGymDay];
+  const dayPills = WORKOUT_DAYS.map(d=>{
+    const n=(S.routine[d]||[]).length;
+    return `<div class="chip ${d===_obGymDay?'on gym':''}" onclick="obGymSelDay('${d}')">${d.slice(0,3)}${n?' · '+n:''}</div>`;
+  }).join('');
+  const selectedList = dayEx.length
+    ? dayEx.map((name,i)=>`<div class="ob-li"><span style="color:var(--muted2);font-weight:800;min-width:20px">${i+1}</span><span class="t">${esc(name)}</span><span class="del" onclick="obRemoveEx(${i})">×</span></div>`).join('')
+    : '<div class="ob-sub" style="margin:0">Día de descanso. Toca ejercicios abajo para añadir.</div>';
+  const musclePills = Object.keys(EXLIB).map(m=>`<div class="chip ${m===_obGymMuscle?'on gym':''}" onclick="obGymSelMuscle('${m}')">${m}</div>`).join('');
+  const exList = EXLIB[_obGymMuscle].map(name=>{
+    const added = dayEx.includes(name);
+    return `<div class="ob-exopt ${added?'added':''}" onclick="obToggleEx('${name}')"><span>${esc(name)}</span><span class="ob-exadd">${added?'✓':'＋'}</span></div>`;
+  }).join('');
+  return `
+    <div class="pillrow" style="margin-bottom:14px">${dayPills}</div>
+    <div class="ob-daybox">
+      <div style="font-weight:800;margin-bottom:10px">${_obGymDay} · ${dayEx.length} ejercicio${dayEx.length!==1?'s':''}</div>
+      ${selectedList}
+    </div>
+    <div class="ob-sub" style="margin:16px 0 6px">Músculo</div>
+    <div class="pillrow">${musclePills}</div>
+    <div class="ob-sub" style="margin:14px 0 6px">Ejercicios de ${_obGymMuscle} — toca para añadir</div>
+    <div>${exList}</div>
+    <div class="ob-sub" style="margin:16px 0 6px">¿Un ejercicio específico o raro? Escríbelo</div>
+    <div class="win-add"><input id="rbCustom" placeholder="Ej: Curl inverso en banco Scott" autocomplete="off"><button style="background:var(--gym);color:#fff" onclick="obAddCustomEx()">＋</button></div>
+    <div class="ob-sub" style="margin:14px 0 6px">Días de abdominales</div>
+    <div class="pillrow">${WORKOUT_DAYS.map(d=>`<div class="chip ${S.abs.days.includes(d)?'on gym':''}" onclick="obAbsToggle('${d}')">${d.slice(0,3)}</div>`).join('')}</div>`;
+}
+function rerenderBuilder(){ const el=$('#rbuild'); if(el) el.innerHTML=buildRoutineHTML(); }
+function obGymSelDay(d){ _obGymDay=d; rerenderBuilder(); }
+function obGymSelMuscle(m){ _obGymMuscle=m; rerenderBuilder(); }
 function obToggleEx(name){
   const arr = S.routine[_obGymDay] || (S.routine[_obGymDay]=[]);
   const i=arr.indexOf(name);
   if(i>=0) arr.splice(i,1); else arr.push(name);
-  save(); renderOnboarding();
+  save(); rerenderBuilder();
 }
-function obRemoveEx(i){ (S.routine[_obGymDay]||[]).splice(i,1); save(); renderOnboarding(); }
-function obAbsToggle(d){ const i=S.abs.days.indexOf(d); if(i>=0)S.abs.days.splice(i,1); else S.abs.days.push(d); save(); renderOnboarding(); }
+function obAddCustomEx(){
+  const inp=$('#rbCustom'); if(!inp) return;
+  const v=inp.value.trim(); if(!v) return;
+  const arr=S.routine[_obGymDay]||(S.routine[_obGymDay]=[]);
+  if(!arr.includes(v)) arr.push(v);
+  save(); rerenderBuilder();
+}
+function obRemoveEx(i){ (S.routine[_obGymDay]||[]).splice(i,1); save(); rerenderBuilder(); }
+function obAbsToggle(d){ const i=S.abs.days.indexOf(d); if(i>=0)S.abs.days.splice(i,1); else S.abs.days.push(d); save(); rerenderBuilder(); }
 // hábitos
 let _obDiff='simple';
 function obPickDiff(v){ _obDiff=v; $('#obhS').classList.toggle('on',v==='simple'); $('#obhG').classList.toggle('on',v==='good'); }
