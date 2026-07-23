@@ -276,6 +276,13 @@ svg{display:block;width:100%;overflow:visible}
 .ob-addrow{display:flex;gap:8px;margin-top:10px}
 .ob-addrow input{flex:1}
 .ob-addbtn{width:46px;flex-shrink:0;background:var(--acc);border:none;color:#fff;border-radius:11px;font-size:22px;font-weight:700;cursor:pointer}
+.ob-daybox{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:13px}
+.ob-exopt{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;
+  border-radius:11px;background:var(--card2);border:1px solid var(--line);margin-bottom:7px;cursor:pointer;
+  font-size:14px;font-weight:600}
+.ob-exopt:active{transform:scale(.99)}
+.ob-exopt.added{background:rgba(249,122,83,.16);border-color:rgba(249,122,83,.5)}
+.ob-exadd{font-size:19px;font-weight:800;color:var(--gym);flex-shrink:0}
 
 /* Coach */
 .coach-ex{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
@@ -1606,7 +1613,19 @@ function importData(input){
    ONBOARDING / CONFIGURACIÓN INICIAL (saltable)
    ============================================================ */
 let obStep = 0;
-function startOnboarding(){ obStep=0; $('#onboarding').classList.remove('hidden'); renderOnboarding(); }
+let _obGymDay = 'Lunes', _obGymMuscle = 'Pecho';
+const EXLIB = {
+  'Pecho': ['Press banca','Press inclinado con barra','Press inclinado con mancuernas','Press declinado','Press con mancuernas','Aperturas con mancuerna','Aperturas inclinadas','Cruces en polea alta','Cruces en polea baja','Peck deck (máquina)','Press en máquina','Fondos en paralelas','Flexiones','Flexiones diamante','Pull-over'],
+  'Espalda': ['Dominadas','Dominadas supinas','Jalón al pecho','Jalón agarre neutro','Jalón tras nuca','Remo con barra','Remo con mancuerna','Remo en punta (T-bar)','Remo en máquina','Remo en polea baja','Remo Gironda','Peso muerto','Pull-over','Face pull','Encogimientos (trapecio)','Hiperextensiones'],
+  'Hombro': ['Press militar con barra','Press militar con mancuernas','Press Arnold','Press en máquina','Elevaciones laterales','Elevaciones laterales en polea','Elevaciones frontales','Elevaciones frontales con disco','Pájaros (posterior)','Pájaros en polea','Face pull','Remo al mentón','Encogimientos'],
+  'Bíceps': ['Curl con barra','Curl con barra Z','Curl con mancuernas','Curl alterno','Curl martillo','Curl concentrado','Curl predicador','Curl en banco inclinado','Curl en polea','Curl araña','Curl 21'],
+  'Tríceps': ['Extensión en polea','Extensión en polea con cuerda','Press francés','Press cerrado','Fondos en paralelas','Fondos en banco','Patada de tríceps','Extensión sobre la cabeza','Extensión en máquina','Rompecráneos'],
+  'Pierna': ['Sentadilla','Sentadilla frontal','Sentadilla goblet','Prensa','Hack squat','Zancadas','Sentadilla búlgara','Extensión de cuádriceps','Curl femoral tumbado','Curl femoral sentado','Peso muerto rumano','Peso muerto','Sissy squat','Step up'],
+  'Glúteo': ['Hip thrust','Puente de glúteo','Patada de glúteo en polea','Abducción en máquina','Peso muerto rumano','Zancadas','Sentadilla búlgara','Step up','Good morning','Puente a una pierna'],
+  'Gemelo': ['Gemelos de pie','Gemelos sentado','Gemelos en prensa','Elevación de talones con mancuerna','Gemelos a una pierna','Saltos a la comba'],
+  'Abdominales': ['Crunch','Crunch en máquina','Elevación de piernas','Elevación de piernas colgado','Plancha','Plancha lateral','Rueda abdominal','Russian twist','Encogimientos en polea','Mountain climbers','Bicicleta','Toques a los talones']
+};
+function startOnboarding(){ obStep=0; _obGymDay='Lunes'; _obGymMuscle='Pecho'; $('#onboarding').classList.remove('hidden'); renderOnboarding(); }
 function finishOnboarding(){ S.onboarded=true; save(); $('#onboarding').classList.add('hidden'); $('#onboarding').innerHTML=''; go(current||'habits'); }
 function obGo(n){ obStep=n; renderOnboarding(); window.scrollTo(0,0); $('#onboarding').scrollTop=0; }
 function obDots(active){
@@ -1624,20 +1643,38 @@ function renderOnboarding(){
     </div>`;
     return;
   }
-  if(obStep===1){ // GYM
-    const days=WORKOUT_DAYS.map((d,i)=>`<div class="ob-day">
-      <label>${d}</label>
-      <textarea id="ob_rt_${i}" placeholder="Un ejercicio por línea (vacío = descanso)">${(S.routine[d]||[]).join('\n')}</textarea>
-    </div>`).join('');
+  if(obStep===1){ // GYM — constructor a clics
+    if(!S.routine[_obGymDay]) S.routine[_obGymDay]=[];
+    const dayEx = S.routine[_obGymDay];
+    const dayPills = WORKOUT_DAYS.map(d=>{
+      const n=(S.routine[d]||[]).length;
+      return `<div class="chip ${d===_obGymDay?'on gym':''}" onclick="obGymSelDay('${d}')">${d.slice(0,3)}${n?' · '+n:''}</div>`;
+    }).join('');
+    const selectedList = dayEx.length
+      ? dayEx.map((name,i)=>`<div class="ob-li"><span style="color:var(--muted2);font-weight:800;min-width:20px">${i+1}</span><span class="t">${esc(name)}</span><span class="del" onclick="obRemoveEx(${i})">×</span></div>`).join('')
+      : '<div class="ob-sub" style="margin:0">Día de descanso. Toca ejercicios abajo para añadir.</div>';
+    const musclePills = Object.keys(EXLIB).map(m=>`<div class="chip ${m===_obGymMuscle?'on gym':''}" onclick="obGymSelMuscle('${m}')">${m}</div>`).join('');
+    const exList = EXLIB[_obGymMuscle].map(name=>{
+      const added = dayEx.includes(name);
+      return `<div class="ob-exopt ${added?'added':''}" onclick="obToggleEx('${name}')"><span>${esc(name)}</span><span class="ob-exadd">${added?'✓':'＋'}</span></div>`;
+    }).join('');
     el.innerHTML=`<div class="ob-inner">${obDots(1)}
-      <h2>💪🏽 Rutina de gym</h2>
-      <p class="ob-sub">Escribe tus ejercicios de cada día, uno por línea. Deja vacío los días de descanso.</p>
-      ${days}
-      <div class="ob-day"><label>Días de abdominales</label>
-        <div class="pillrow" id="obAbs">${WORKOUT_DAYS.map(d=>`<div class="chip ${S.abs.days.includes(d)?'on gym':''}" onclick="obToggleAbs('${d}')">${d.slice(0,3)}</div>`).join('')}</div></div>
+      <h2>💪🏽 Crea tu rutina</h2>
+      <p class="ob-sub">Elige un día → un músculo → toca los ejercicios para añadirlos en orden. Vuelve a tocarlos para quitarlos.</p>
+      <div class="pillrow" style="margin-bottom:14px">${dayPills}</div>
+      <div class="ob-daybox">
+        <div style="font-weight:800;margin-bottom:10px">${_obGymDay} · ${dayEx.length} ejercicio${dayEx.length!==1?'s':''}</div>
+        ${selectedList}
+      </div>
+      <div class="ob-sub" style="margin:16px 0 6px">Músculo</div>
+      <div class="pillrow">${musclePills}</div>
+      <div class="ob-sub" style="margin:14px 0 6px">Ejercicios de ${_obGymMuscle} — toca para añadir</div>
+      <div>${exList}</div>
+      <div class="ob-sub" style="margin:16px 0 6px">Días de abdominales</div>
+      <div class="pillrow">${WORKOUT_DAYS.map(d=>`<div class="chip ${S.abs.days.includes(d)?'on gym':''}" onclick="obAbsToggle('${d}')">${d.slice(0,3)}</div>`).join('')}</div>
       <div class="ob-actions">
-        <button class="btn ghost" onclick="obSaveGym();obGo(2)">Saltar</button>
-        <button class="btn gym" onclick="obSaveGym();obGo(2)">Siguiente</button>
+        <button class="btn ghost" onclick="obGo(2)">Saltar</button>
+        <button class="btn gym" onclick="obGo(2)">Siguiente</button>
       </div>
       <button class="ob-skipall" onclick="finishOnboarding()">Saltar todo</button></div>`;
     return;
@@ -1709,15 +1746,17 @@ function renderOnboarding(){
     return;
   }
 }
-// gym
-function obToggleAbs(d){
-  const i=S.abs.days.indexOf(d); if(i>=0)S.abs.days.splice(i,1); else S.abs.days.push(d);
-  $('#obAbs').innerHTML = WORKOUT_DAYS.map(x=>`<div class="chip ${S.abs.days.includes(x)?'on gym':''}" onclick="obToggleAbs('${x}')">${x.slice(0,3)}</div>`).join('');
+// gym — constructor a clics
+function obGymSelDay(d){ _obGymDay=d; renderOnboarding(); }
+function obGymSelMuscle(m){ _obGymMuscle=m; renderOnboarding(); }
+function obToggleEx(name){
+  const arr = S.routine[_obGymDay] || (S.routine[_obGymDay]=[]);
+  const i=arr.indexOf(name);
+  if(i>=0) arr.splice(i,1); else arr.push(name);
+  save(); renderOnboarding();
 }
-function obSaveGym(){
-  WORKOUT_DAYS.forEach((d,i)=>{ const ta=$('#ob_rt_'+i); if(ta) S.routine[d]=ta.value.split('\n').map(x=>x.trim()).filter(Boolean); });
-  save();
-}
+function obRemoveEx(i){ (S.routine[_obGymDay]||[]).splice(i,1); save(); renderOnboarding(); }
+function obAbsToggle(d){ const i=S.abs.days.indexOf(d); if(i>=0)S.abs.days.splice(i,1); else S.abs.days.push(d); save(); renderOnboarding(); }
 // hábitos
 let _obDiff='simple';
 function obPickDiff(v){ _obDiff=v; $('#obhS').classList.toggle('on',v==='simple'); $('#obhG').classList.toggle('on',v==='good'); }
