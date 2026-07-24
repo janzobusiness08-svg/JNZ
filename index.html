@@ -170,6 +170,11 @@ svg{display:block;width:100%;overflow:visible}
 .exline:last-child{border-bottom:none}
 .exname{flex:1;font-weight:600;font-size:14px}
 .exprev{font-size:11px;color:var(--muted)}
+.set-type{background:var(--card2);border:1px solid var(--line);color:var(--muted);border-radius:10px;
+  padding:0 10px;height:44px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;
+  flex:0 0 auto;box-sizing:border-box}
+.set-type.st-pr{background:rgba(255,193,7,.18);border-color:rgba(255,193,7,.5);color:#ffc94d}
+.set-type.st-bilbo{background:rgba(91,124,250,.18);border-color:rgba(91,124,250,.5);color:var(--acc)}
 
 /* Rest timer */
 .timer-head{display:flex;align-items:center;justify-content:space-between;cursor:pointer}
@@ -833,7 +838,9 @@ function renderGymHistory(){
   el.innerHTML = [...S.workouts].reverse().map(w=>{
     const exs = w.exercises.map(e=>{
       const best = e.sets.reduce((a,b)=>b.weight>a.weight?b:a,e.sets[0]);
-      return `<div class="exline"><div class="exname" style="font-size:13px">${esc(e.name)}</div>
+      const pr = e.sets.some(s=>s.type==='pr') ? '<span class="tag" style="color:#ffc94d;border-color:rgba(255,193,7,.5)">🏆 PR</span>' : '';
+      const bilbo = e.sets.some(s=>s.type==='bilbo') ? '<span class="tag" style="color:var(--acc);border-color:rgba(91,124,250,.4)">🔁 Bilbo</span>' : '';
+      return `<div class="exline"><div class="exname" style="font-size:13px">${esc(e.name)} ${pr} ${bilbo}</div>
         <div class="exprev">${e.sets.length} series · máx ${best.weight}kg×${best.reps}</div></div>`;
     }).join('');
     return `<div class="card">
@@ -1115,7 +1122,7 @@ function openLogWorkout(){
 function openEditWorkout(id){
   const w=S.workouts.find(x=>x.id===id); if(!w) return;
   window._editWorkoutId=id;
-  logDraft = w.exercises.map(e=>({name:e.name, sets:e.sets.map(s=>({weight:s.weight,reps:s.reps}))}));
+  logDraft = w.exercises.map(e=>({name:e.name, sets:e.sets.map(s=>({weight:s.weight,reps:s.reps,type:s.type||'normal'}))}));
   renderLogModal(w.day, w.notes);
 }
 function renderLogModal(day, notesVal){
@@ -1124,6 +1131,7 @@ function renderLogModal(day, notesVal){
     const sets = e.sets.map((s,si)=>`<div class="row" style="margin-bottom:6px;align-items:center">
         <input type="number" inputmode="decimal" placeholder="kg" value="${s.weight}" onchange="updSet(${ei},${si},'weight',this.value)">
         <input type="number" inputmode="numeric" placeholder="reps" value="${s.reps}" onchange="updSet(${ei},${si},'reps',this.value)">
+        <button type="button" class="set-type st-${s.type||'normal'}" onclick="cycleSetType(${ei},${si})">${typeLabel(s.type)}</button>
         <span class="del" style="flex:0" onclick="rmSet(${ei},${si})">×</span></div>`).join('');
     const prev=lastLogFor(e.name);
     return `<div style="padding:12px 0;border-bottom:1px solid var(--line)">
@@ -1136,14 +1144,22 @@ function renderLogModal(day, notesVal){
   }).join('');
   const editing = !!window._editWorkoutId;
   modal(`<h3>${editing?'Editar entreno':'Registrar entreno'} · ${day}</h3>
+    <div class="sub" style="margin-bottom:10px">Toca «Serie» para marcar el tipo: 🏆 <b>PR</b> (tu récord) · 🔁 <b>Bilbo</b> (más reps y menos peso, para fuerza).</div>
     ${body}
     <div class="field" style="margin-top:14px"><label>Notas de la sesión</label>
       <textarea id="wNotes" placeholder="Ej: buena forma, subí peso en press">${notesVal?esc(notesVal):''}</textarea></div>
     <button class="btn block" style="background:var(--gym)" onclick="submitWorkout('${day}')">${editing?'Guardar cambios':'Guardar entreno'}</button>`);
 }
-function addSet(ei){ logDraft[ei].sets.push({weight:'',reps:''}); const n=$('#wNotes')?$('#wNotes').value:''; renderLogModal(window._logDay, n); }
+function addSet(ei){ logDraft[ei].sets.push({weight:'',reps:'',type:'normal'}); const n=$('#wNotes')?$('#wNotes').value:''; renderLogModal(window._logDay, n); }
 function rmSet(ei,si){ const n=$('#wNotes')?$('#wNotes').value:''; logDraft[ei].sets.splice(si,1); renderLogModal(window._logDay, n); }
 function updSet(ei,si,f,v){ logDraft[ei].sets[si][f]= f==='weight'?parseFloat(v)||0:parseInt(v)||0; }
+function typeLabel(t){ return t==='pr'?'🏆 PR':t==='bilbo'?'🔁 Bilbo':'Serie'; }
+function cycleSetType(ei,si){
+  const order=['normal','pr','bilbo'];
+  const cur=logDraft[ei].sets[si].type||'normal';
+  logDraft[ei].sets[si].type=order[(order.indexOf(cur)+1)%3];
+  const n=$('#wNotes')?$('#wNotes').value:''; renderLogModal(window._logDay, n);
+}
 function submitWorkout(day){
   const notes = $('#wNotes')?$('#wNotes').value:'';
   const clean = logDraft.map(e=>({name:e.name, sets:e.sets.filter(s=>s.weight>0||s.reps>0)}));
