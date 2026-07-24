@@ -163,6 +163,14 @@ svg{display:block;width:100%;overflow:visible}
 .toast.show{transform:translateX(-50%) translateY(0)}
 .toast.lvl{background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff}
 
+/* Confeti */
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:400;overflow:hidden}
+.confetti i{position:absolute;top:-16px;width:9px;height:14px;opacity:.95;animation:confall linear forwards}
+@keyframes confall{
+  0%{transform:translate(0,0) rotate(0deg);opacity:1}
+  100%{transform:translate(var(--x,0),105vh) rotate(720deg);opacity:.9}
+}
+
 /* Gym day pills */
 .days{display:flex;gap:7px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px}
 .days::-webkit-scrollbar{display:none}
@@ -409,7 +417,7 @@ svg{display:block;width:100%;overflow:visible}
       <div style="display:flex;align-items:center;gap:10px">
         <button class="gear" onclick="openHabitStats()" aria-label="Estadísticas">📊</button>
         <button class="gear" onclick="openSettings()" aria-label="Ajustes">⚙</button>
-        <div class="lvlbadge">
+        <div class="lvlbadge" onclick="showMotivation()" style="cursor:pointer">
           <div class="n" id="lvlNum">1</div>
           <div class="l">Nivel</div>
         </div>
@@ -668,7 +676,7 @@ function addXp(n){
   S.xp = Math.max(0, S.xp + n);
   const after = level();
   save();
-  if(after > before) toast('¡Nivel ' + after + '! 🎉', true);
+  if(after > before){ toast('¡Nivel ' + after + '! 🎉', true); confetti(); }
 }
 
 /* ============================================================
@@ -863,7 +871,10 @@ function saveWorkout(day, exData, notes){
   const w = {id:uid(), date:todayKey(), day, notes:notes.trim(),
     exercises: exData.filter(e=>e.sets.length).map(e=>({name:e.name, sets:e.sets}))};
   if(w.exercises.length===0){ toast('Añade al menos una serie',false); return false; }
-  S.workouts.push(w); save(); toast('Entreno guardado 💪'); renderGym(); return true;
+  S.workouts.push(w); save();
+  if(w.exercises.some(e=>e.sets.some(s=>s.type==='pr'))){ confetti(); toast('🏆 ¡Nuevo PR!'); }
+  else toast('Entreno guardado 💪');
+  renderGym(); return true;
 }
 function delWorkout(id){
   if(!confirm('¿Eliminar este entreno?')) return;
@@ -1208,7 +1219,9 @@ function submitWorkout(day){
     const w=S.workouts.find(x=>x.id===window._editWorkoutId);
     const exercises=clean.filter(e=>e.sets.length);
     if(exercises.length===0){ toast('Añade al menos una serie',false); return; }
-    w.exercises=exercises; w.notes=notes.trim(); save(); toast('Entreno actualizado'); window._editWorkoutId=null; renderGym(); closeModal();
+    w.exercises=exercises; w.notes=notes.trim(); save();
+    if(exercises.some(e=>e.sets.some(s=>s.type==='pr'))){ confetti(); toast('🏆 ¡PR actualizado!'); } else toast('Entreno actualizado');
+    window._editWorkoutId=null; renderGym(); closeModal();
   } else {
     if(saveWorkout(day, clean, notes)) closeModal();
   }
@@ -1298,6 +1311,53 @@ function fmtDate(iso, short){
 function toast(msg, isLevel){
   const t=$('#toast'); t.textContent=msg; t.className='toast show'+(isLevel?' lvl':'');
   clearTimeout(window._tt); window._tt=setTimeout(()=>t.className='toast',1600);
+}
+/* Confeti (sin librerías) */
+function confetti(){
+  const colors=['#5b7cfa','#34d399','#f97a53','#ffc94d','#f2557a','#7c6cf5'];
+  const c=document.createElement('div'); c.className='confetti';
+  for(let i=0;i<55;i++){
+    const p=document.createElement('i');
+    p.style.left=Math.random()*100+'%';
+    p.style.background=colors[i%colors.length];
+    p.style.animationDelay=(Math.random()*0.35).toFixed(2)+'s';
+    p.style.animationDuration=(1.3+Math.random()*1).toFixed(2)+'s';
+    p.style.setProperty('--x',((Math.random()*2-1)*140).toFixed(0)+'px');
+    if(i%3===0) p.style.borderRadius='50%';
+    c.appendChild(p);
+  }
+  document.body.appendChild(c);
+  setTimeout(()=>c.remove(),2700);
+}
+/* Frases motivadoras (al tocar el nivel) */
+const MOTIVA=[
+  'La constancia le gana al talento. Solo tienes que seguir apareciendo.',
+  'No necesitas ganas, necesitas costumbre. Hazlo aunque no te apetezca.',
+  'Cada hábito que marcas hoy es un voto por la persona que quieres ser.',
+  'Lo estás haciendo bien. No pares justo antes de que empiece a notarse.',
+  'Sé constante y las cosas llegarán. Siempre llegan a quien no se rinde.',
+  'Un 1% mejor cada día te hace el doble en dos meses. Sigue sumando.',
+  'No cuentes los días. Haz que los días cuenten.',
+  'La motivación se acaba, la disciplina no. Apuesta por la segunda.',
+  'El que aparece cuando no le apetece es imparable. Sé ese.',
+  'No has llegado hasta aquí para llegar solo hasta aquí.',
+  'Tu yo del futuro está mirando lo que haces hoy. No le falles.',
+  'Los días que cuentan son los que no te apetecía. Este es uno.',
+  'Poco, pero todos los días. Así se construye todo lo grande.',
+  'Ya eres mejor que ayer solo por estar aquí. Ahora demuéstralo.',
+  'Disciplina hoy, libertad mañana. Paga el precio, merece la pena.',
+  'El progreso es lento y aburrido. Confía en él igualmente.',
+  'Nadie lo va a hacer por ti. Menos mal: el mérito será todo tuyo.',
+  'Sigue así. Lo estás logrando, aunque hoy no lo notes.'
+];
+function showMotivation(){
+  const f=MOTIVA[Math.floor(Math.random()*MOTIVA.length)];
+  modal(`<div style="text-align:center;padding:8px 4px 4px">
+    <div style="font-size:42px;margin-bottom:14px">🔥</div>
+    <div style="font-size:20px;font-weight:800;line-height:1.4">${f}</div>
+    <div class="sub" style="margin-top:16px">Nivel ${level()} · ${S.xp} XP</div>
+    <button class="btn block" style="margin-top:16px" onclick="closeModal()">¡Vamos! 💪🏽</button>
+  </div>`);
 }
 /* Minimal SVG line chart (no libs) */
 function lineChart(values, labels, unit, color){
