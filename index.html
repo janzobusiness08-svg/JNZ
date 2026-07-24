@@ -336,6 +336,12 @@ svg{display:block;width:100%;overflow:visible}
 .pr-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pr-sub{font-size:11px;color:var(--muted2);margin-top:2px}
 .pr-val{font-weight:800;font-size:15px;color:#ffc94d;white-space:nowrap;flex-shrink:0}
+.ms-card{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:12px}
+.ms-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.ms-lvl{font-size:15px;font-weight:800;color:var(--acc)}
+.ms-date{font-size:11px;color:var(--muted2)}
+.ms-img{width:100%;border-radius:11px;margin-bottom:10px;display:block}
+.ms-text{font-size:14px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
 
 /* Wins */
 .win-explain{background:rgba(52,211,153,.09);border-left:3px solid var(--obj);border-radius:0 10px 10px 0;
@@ -607,6 +613,7 @@ const DEFAULT_STATE = {
   tasksDate:null,          // día al que pertenecen las tareas SIN fecha (se borran al cambiar de día)
   calendar:{},             // notas del calendario: { 'YYYY-MM-DD': 'texto' }
   wins:[],                 // diario de wins: { id,text,date }
+  milestones:[],           // puntos de control cada 5 niveles: { level,text,photo,date }
   completions:{},          // { 'YYYY-MM-DD': [habitId,...] }
   workouts:[],             // { id,date,day,exercises:[{name,sets:[{weight,reps}]}],notes }
   routine:JSON.parse(JSON.stringify(DEFAULT_ROUTINE)),
@@ -640,6 +647,7 @@ function load(){
   S.tasks = S.tasks || [];
   S.calendar = S.calendar || {};
   S.wins = S.wins || [];
+  S.milestones = S.milestones || [];
   if(typeof S.restTime!=='number') S.restTime = 60;
   if(typeof S.onboarded!=='boolean') S.onboarded = true; // usuarios existentes no ven el asistente
   resetTasksIfNewDay();
@@ -676,7 +684,10 @@ function addXp(n){
   S.xp = Math.max(0, S.xp + n);
   const after = level();
   save();
-  if(after > before){ toast('¡Nivel ' + after + '! 🎉', true); confetti(); }
+  if(after > before){
+    toast('¡Nivel ' + after + '! 🎉', true); confetti();
+    if(after%5===0 && !S.milestones.some(m=>m.level===after)) setTimeout(()=>openMilestone(after), 700);
+  }
 }
 
 /* ============================================================
@@ -719,6 +730,7 @@ function toggleHabit(id){
 }
 function addHabit(name, diff){
   if(!name.trim()) return;
+  if(S.habits.length>=5){ toast('Máximo 5 hábitos diarios',false); return; }
   S.habits.push({id:uid(), name:name.trim(), diff, type:'daily'});
   save(); renderHabits();
 }
@@ -1418,7 +1430,58 @@ function openHabitStats(){
     <div class="sub" style="margin-bottom:6px">% de hábitos completados · últimos 14 días</div>
     ${lineChart(vals, labels, '%', 'var(--acc)')}
     <div class="sub" style="text-align:center;margin-top:10px">Total histórico: <b style="color:var(--txt)">${totalDone}</b> hábitos completados</div>
-    <button class="btn block" style="margin-top:14px" onclick="closeModal()">Cerrar</button>`);
+    <button class="btn block ghost" style="margin-top:14px" onclick="closeModal();openMilestones()">📸 Ver mi progreso (puntos de control)</button>
+    <button class="btn block" style="margin-top:10px" onclick="closeModal()">Cerrar</button>`);
+}
+
+/* ============================================================
+   PUNTOS DE CONTROL (cada 5 niveles)
+   ============================================================ */
+function openMilestone(level){
+  window._msLevel=level; window._msPhoto=null;
+  modal(`<h3>🎉 ¡Nivel ${level}! Punto de control</h3>
+    <div class="sub">Escribe cómo estás ahora y sube una foto. Dentro de unos niveles podrás mirar atrás y ver tu progreso.</div>
+    <div class="field"><label>Tu situación ahora mismo</label>
+      <textarea id="msText" placeholder="Cómo te sientes, cómo va todo, dónde estás y a dónde quieres llegar…" style="min-height:100px"></textarea></div>
+    <img id="msPrev" style="display:none;width:100%;border-radius:12px;margin-bottom:12px">
+    <input type="file" id="msPhoto" accept="image/*" style="display:none" onchange="handleMilestonePhoto(this)">
+    <button class="btn ghost block" style="margin-bottom:10px" onclick="document.getElementById('msPhoto').click()">📷 Subir foto</button>
+    <button class="btn block" onclick="saveMilestone()">Guardar punto de control</button>
+    <button class="ob-skipall" onclick="closeModal()">Ahora no</button>`);
+}
+function handleMilestonePhoto(input){
+  const f=input.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=560; let w=img.width, h=img.height;
+      if(w>h && w>max){ h=Math.round(h*max/w); w=max; } else if(h>=w && h>max){ w=Math.round(w*max/h); h=max; }
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      window._msPhoto=cv.toDataURL('image/jpeg',0.6);
+      const p=$('#msPrev'); if(p){ p.src=window._msPhoto; p.style.display='block'; }
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(f);
+}
+function saveMilestone(){
+  const text=($('#msText')?$('#msText').value:'').trim();
+  S.milestones.push({level:window._msLevel, text, photo:window._msPhoto||null, date:todayKey()});
+  save(); closeModal(); toast('Punto de control guardado 📸');
+}
+function openMilestones(){
+  if(!S.milestones.length){
+    modal('<h3>📸 Mi progreso</h3><div class="empty" style="padding:22px"><div class="ico">📸</div>Todavía no tienes puntos de control. Aparecen automáticamente cada 5 niveles.</div>');
+    return;
+  }
+  const body=[...S.milestones].sort((a,b)=>a.level-b.level).map(m=>`<div class="ms-card">
+    <div class="ms-head"><span class="ms-lvl">🎯 Nivel ${m.level}</span><span class="ms-date">${fmtDate(m.date)}</span></div>
+    ${m.photo?`<img src="${m.photo}" class="ms-img">`:''}
+    ${m.text?`<div class="ms-text">${esc(m.text)}</div>`:'<div class="ms-text" style="color:var(--muted2);font-style:italic">Sin nota.</div>'}
+  </div>`).join('');
+  modal(`<h3>📸 Mi progreso</h3><div class="sub">Tus puntos de control cada 5 niveles. Mira lo lejos que has llegado.</div>${body}`);
 }
 
 /* ============================================================
@@ -1864,8 +1927,9 @@ function renderOnboarding(){
       <span class="del" onclick="obDelHabit('${h.id}')">×</span></div>`).join('') || '<div class="ob-sub">Aún no hay hábitos.</div>';
     el.innerHTML=`<div class="ob-inner">${obDots(2)}
       <h2>✅ Hábitos diarios</h2>
-      <p class="ob-sub">Los que quieres cumplir cada día (dan XP). Añade los que quieras.</p>
+      <p class="ob-sub">Los que quieres cumplir cada día (dan XP). Máximo 5.</p>
       ${list}
+      ${S.habits.length>=5 ? '<div class="ob-sub" style="margin-top:12px">Ya tienes el máximo de 5 hábitos. Quita alguno con la × para cambiarlo.</div>' : `
       <div class="pillrow" style="margin-top:12px">
         <div class="chip on" id="obhS" onclick="obPickDiff('simple')">Simple · +5</div>
         <div class="chip" id="obhG" onclick="obPickDiff('good')">Bueno · +10</div>
@@ -1873,7 +1937,7 @@ function renderOnboarding(){
       <div class="ob-addrow">
         <input id="obHabitName" placeholder="Ej: Beber 2L de agua" autocomplete="off">
         <button class="ob-addbtn" onclick="obAddHabit()">＋</button>
-      </div>
+      </div>`}
       <div class="ob-actions">
         <button class="btn ghost" onclick="obGo(3)">Saltar</button>
         <button class="btn" onclick="obGo(3)">Siguiente</button>
@@ -1991,7 +2055,7 @@ function obAbsToggle(d){ const i=S.abs.days.indexOf(d); if(i>=0)S.abs.days.splic
 // hábitos
 let _obDiff='simple';
 function obPickDiff(v){ _obDiff=v; $('#obhS').classList.toggle('on',v==='simple'); $('#obhG').classList.toggle('on',v==='good'); }
-function obAddHabit(){ const n=$('#obHabitName').value.trim(); if(!n)return; S.habits.push({id:uid(),name:n,diff:_obDiff,type:'daily'}); save(); renderOnboarding(); }
+function obAddHabit(){ const n=$('#obHabitName').value.trim(); if(!n)return; if(S.habits.length>=5) return; S.habits.push({id:uid(),name:n,diff:_obDiff,type:'daily'}); save(); renderOnboarding(); }
 function obDelHabit(id){ S.habits=S.habits.filter(h=>h.id!==id); save(); renderOnboarding(); }
 // objetivos
 function obAddGoal(){ const t=$('#obGoalText').value.trim(); if(!t)return; S.goals.push({id:uid(),text:t,done:false}); save(); renderOnboarding(); }
