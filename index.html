@@ -66,6 +66,7 @@ h1,h2,h3{margin:0}
 .btn.good{background:var(--good);color:#06251a}
 .btn.warn{background:var(--warn);color:#3a2600}
 .btn.gym{background:var(--gym)}
+.btn.resume{background:var(--good);color:#06251a}
 .chip{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:999px;
   font-size:12px;font-weight:700;border:1px solid var(--line);background:var(--card2);
   color:var(--muted);cursor:pointer}
@@ -476,7 +477,7 @@ svg{display:block;width:100%;overflow:visible}
       <div class="section-title" style="margin:0 0 10px"><h2 style="font-size:16px" id="gymDayTitle">Lunes</h2>
         <span class="sub" style="margin:0" id="gymDayMuscles"></span></div>
       <div id="gymExercises"></div>
-      <button class="btn block" style="margin-top:14px" onclick="openLogWorkout()">Registrar entreno de hoy</button>
+      <button class="btn block" id="logBtn" style="margin-top:14px" onclick="openLogWorkout()">Registrar entreno de hoy</button>
     </div>
 
     <div class="card timer-card">
@@ -617,6 +618,7 @@ const DEFAULT_STATE = {
   completions:{},          // { 'YYYY-MM-DD': [habitId,...] }
   workouts:[],             // { id,date,day,exercises:[{name,sets:[{weight,reps}]}],notes }
   routine:JSON.parse(JSON.stringify(DEFAULT_ROUTINE)),
+  draftWorkout:null,       // entreno en curso (se guarda solo): { day,exercises,notes }
   abs:{days:["Lunes","Miércoles","Viernes"]}, // abdominales 3x/sem
   goals:[],
   finance:{
@@ -648,6 +650,7 @@ function load(){
   S.calendar = S.calendar || {};
   S.wins = S.wins || [];
   S.milestones = S.milestones || [];
+  if(S.draftWorkout===undefined) S.draftWorkout=null;
   if(typeof S.restTime!=='number') S.restTime = 60;
   if(typeof S.onboarded!=='boolean') S.onboarded = true; // usuarios existentes no ven el asistente
   resetTasksIfNewDay();
@@ -864,6 +867,13 @@ function renderGym(){
   sel.innerHTML = allEx.map(e=>`<option value="${esc(e)}">${esc(e)}</option>`).join('');
   if(prevVal && allEx.includes(prevVal)) sel.value = prevVal;
   renderExerciseChart();
+
+  // botón de registrar / continuar entreno en curso
+  const lb=$('#logBtn');
+  if(lb){
+    if(S.draftWorkout){ lb.textContent='▶️ Continuar entreno ('+S.draftWorkout.day+')'; lb.classList.add('resume'); }
+    else { lb.textContent='Registrar entreno de hoy'; lb.classList.remove('resume'); }
+  }
 
   renderGymHistory();
 }
@@ -1177,16 +1187,37 @@ function submitGoal(){ const t=$('#gText').value; if(!t.trim())return; addGoal(t
 let logDraft=[];
 function openLogWorkout(){
   window._editWorkoutId=null;
+  if(S.draftWorkout){   // reanudar entreno en curso
+    window._logDay = S.draftWorkout.day;
+    window._logNotes = S.draftWorkout.notes||'';
+    logDraft = S.draftWorkout.exercises;
+    renderLogModal(S.draftWorkout.day, S.draftWorkout.notes);
+    return;
+  }
   const day = gymSelDay || currentWorkoutDay();
   const exs=[...(S.routine[day]||[])];
   if(S.abs.days.includes(day)) exs.push('Abdominales');
   logDraft = exs.map(name=>({name, sets:[]}));
+  window._logDay = day; window._logNotes='';
   renderLogModal(day);
+}
+// Guarda el entreno en curso sobre la marcha (solo cuando NO estás editando uno guardado)
+function persistDraft(){
+  if(window._editWorkoutId) return;
+  const notes = $('#wNotes') ? $('#wNotes').value : (window._logNotes||'');
+  window._logNotes = notes;
+  S.draftWorkout = { day: window._logDay, exercises: logDraft, notes: notes };
+  save();
+}
+function discardDraft(){
+  if(!confirm('¿Descartar el entreno en curso? Se perderá lo que llevas apuntado.')) return;
+  S.draftWorkout=null; logDraft=[]; save(); closeModal(); renderGym();
 }
 function openEditWorkout(id){
   const w=S.workouts.find(x=>x.id===id); if(!w) return;
   window._editWorkoutId=id;
   logDraft = w.exercises.map(e=>({name:e.name, sets:e.sets.map(s=>({weight:s.weight,reps:s.reps,type:s.type||'normal'}))}));
+  window._logDay = w.day; window._logNotes = w.notes||'';
   renderLogModal(w.day, w.notes);
 }
 function renderLogModal(day, notesVal){
@@ -1208,24 +1239,43 @@ function renderLogModal(day, notesVal){
   }).join('');
   const editing = !!window._editWorkoutId;
   modal(`<h3>${editing?'Editar entreno':'Registrar entreno'} · ${day}</h3>
-    <div class="sub" style="margin-bottom:10px">Toca «Serie» para marcar el tipo: 🏆 <b>PR</b> (tu récord) · 🔁 <b>Bilbo</b> (más reps y menos peso, para fuerza).</div>
+    <div class="sub" style="margin-bottom:10px">Toca «Serie» para marcar el tipo: 🏆 <b>PR</b> (tu récord) · 🔁 <b>Bilbo</b> (más reps y menos peso, para fuerza).${editing?'':' Puedes salir y volver: se guarda solo.'}</div>
     ${body}
+    <button class="btn ghost block" style="margin-top:12px" onclick="window._logNotes=(document.getElementById('wNotes')||{}).value||'';openAddExerciseToLog()">➕ Añadir ejercicio</button>
     <div class="field" style="margin-top:14px"><label>Notas de la sesión</label>
-      <textarea id="wNotes" placeholder="Ej: buena forma, subí peso en press">${notesVal?esc(notesVal):''}</textarea></div>
-    <button class="btn block" style="background:var(--gym)" onclick="submitWorkout('${day}')">${editing?'Guardar cambios':'Guardar entreno'}</button>`);
+      <textarea id="wNotes" placeholder="Ej: buena forma, subí peso en press" oninput="persistDraft()">${notesVal?esc(notesVal):''}</textarea></div>
+    <button class="btn block" style="background:var(--gym)" onclick="submitWorkout('${day}')">${editing?'Guardar cambios':'Guardar entreno'}</button>
+    ${editing?'':'<button class="ob-skipall" onclick="discardDraft()">Descartar entreno en curso</button>'}`);
 }
-function addSet(ei){ logDraft[ei].sets.push({weight:'',reps:'',type:'normal'}); const n=$('#wNotes')?$('#wNotes').value:''; renderLogModal(window._logDay, n); }
-function rmSet(ei,si){ const n=$('#wNotes')?$('#wNotes').value:''; logDraft[ei].sets.splice(si,1); renderLogModal(window._logDay, n); }
-function updSet(ei,si,f,v){ logDraft[ei].sets[si][f]= f==='weight'?parseFloat(v)||0:parseInt(v)||0; }
+function addSet(ei){ logDraft[ei].sets.push({weight:'',reps:'',type:'normal'}); const n=$('#wNotes')?$('#wNotes').value:''; persistDraft(); renderLogModal(window._logDay, n); }
+function rmSet(ei,si){ const n=$('#wNotes')?$('#wNotes').value:''; logDraft[ei].sets.splice(si,1); persistDraft(); renderLogModal(window._logDay, n); }
+function updSet(ei,si,f,v){ logDraft[ei].sets[si][f]= f==='weight'?parseFloat(v)||0:parseInt(v)||0; persistDraft(); }
 function typeLabel(t){ return t==='pr'?'🏆 PR':t==='bilbo'?'🔁 Bilbo':'Serie'; }
 function cycleSetType(ei,si){
   const order=['normal','pr','bilbo'];
   const cur=logDraft[ei].sets[si].type||'normal';
   logDraft[ei].sets[si].type=order[(order.indexOf(cur)+1)%3];
-  const n=$('#wNotes')?$('#wNotes').value:''; renderLogModal(window._logDay, n);
+  const n=$('#wNotes')?$('#wNotes').value:''; persistDraft(); renderLogModal(window._logDay, n);
 }
+/* --- Añadir un ejercicio al entreno en curso o al editar --- */
+let _addExMuscle='Pecho';
+function openAddExerciseToLog(){
+  const musclePills=Object.keys(EXLIB).map(m=>`<div class="chip ${m===_addExMuscle?'on gym':''}" onclick="_addExMuscle='${m}';openAddExerciseToLog()">${m}</div>`).join('');
+  const exList=EXLIB[_addExMuscle].map(name=>`<div class="ob-exopt" onclick="addExerciseToLog('${name}')"><span>${esc(name)}</span><span class="ob-exadd">＋</span></div>`).join('');
+  modal(`<h3>➕ Añadir ejercicio</h3>
+    <div class="sub">Elige un músculo y toca el ejercicio, o escríbelo. Se añade a tu entreno.</div>
+    <div class="pillrow" style="margin-bottom:12px">${musclePills}</div>
+    <div class="ob-sub" style="margin-bottom:6px">Ejercicios de ${_addExMuscle}</div>
+    <div>${exList}</div>
+    <div class="ob-sub" style="margin:14px 0 6px">¿No está en la lista? Escríbelo</div>
+    <div class="win-add"><input id="addExCustom" placeholder="Ej: Curl inverso en Scott" autocomplete="off"><button style="background:var(--gym);color:#fff" onclick="addExerciseCustom()">＋</button></div>
+    <button class="btn block ghost" style="margin-top:14px" onclick="backToLog()">← Volver al entreno</button>`);
+}
+function addExerciseToLog(name){ logDraft.push({name, sets:[{weight:'',reps:'',type:'normal'}]}); persistDraft(); backToLog(); }
+function addExerciseCustom(){ const v=$('#addExCustom').value.trim(); if(!v)return; logDraft.push({name:v, sets:[{weight:'',reps:'',type:'normal'}]}); persistDraft(); backToLog(); }
+function backToLog(){ renderLogModal(window._logDay, window._logNotes||''); }
 function submitWorkout(day){
-  const notes = $('#wNotes')?$('#wNotes').value:'';
+  const notes = $('#wNotes')?$('#wNotes').value:(window._logNotes||'');
   const clean = logDraft.map(e=>({name:e.name, sets:e.sets.filter(s=>s.weight>0||s.reps>0)}));
   if(window._editWorkoutId){
     const w=S.workouts.find(x=>x.id===window._editWorkoutId);
@@ -1235,7 +1285,7 @@ function submitWorkout(day){
     if(exercises.some(e=>e.sets.some(s=>s.type==='pr'))){ confetti(); toast('🏆 ¡PR actualizado!'); } else toast('Entreno actualizado');
     window._editWorkoutId=null; renderGym(); closeModal();
   } else {
-    if(saveWorkout(day, clean, notes)) closeModal();
+    if(saveWorkout(day, clean, notes)){ S.draftWorkout=null; save(); closeModal(); }
   }
 }
 
