@@ -301,6 +301,11 @@ svg{display:block;width:100%;overflow:visible}
 .ob-addrow input{flex:1}
 .ob-addbtn{width:46px;flex-shrink:0;background:var(--acc);border:none;color:#fff;border-radius:11px;font-size:22px;font-weight:700;cursor:pointer}
 .ob-daybox{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:13px}
+.ob-li.replacing{outline:2px solid var(--gym);outline-offset:1px}
+.rb-replacing{background:rgba(249,122,83,.14);border:1px solid rgba(249,122,83,.5);border-radius:11px;
+  padding:11px 12px;margin-top:12px;font-size:13px;color:var(--txt);line-height:1.45}
+.rb-replacing button{background:var(--card2);border:1px solid var(--line);color:var(--muted);border-radius:8px;
+  padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;margin-left:6px}
 .ob-exopt{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;
   border-radius:11px;background:var(--card2);border:1px solid var(--line);margin-bottom:7px;cursor:pointer;
   font-size:14px;font-weight:600}
@@ -1213,6 +1218,7 @@ function submitWorkout(day){
 function openRoutineEdit(){
   _obGymDay = (gymSelDay && S.routine[gymSelDay]!==undefined) ? gymSelDay : 'Lunes';
   if(!_obGymMuscle) _obGymMuscle='Pecho';
+  _rbReplaceIdx=-1;
   modal(`<h3>Editar rutina</h3>
     <div class="sub">Elige día → músculo → toca ejercicios. O escribe uno específico. Se guarda solo.</div>
     <div id="rbuild">${buildRoutineHTML()}</div>
@@ -1749,7 +1755,7 @@ function importData(input){
    ONBOARDING / CONFIGURACIÓN INICIAL (saltable)
    ============================================================ */
 let obStep = 0;
-let _obGymDay = 'Lunes', _obGymMuscle = 'Pecho';
+let _obGymDay = 'Lunes', _obGymMuscle = 'Pecho', _rbReplaceIdx = -1;
 const EXLIB = {
   'Pecho': ['Press banca','Press inclinado con barra','Press inclinado con mancuernas','Press declinado','Press con mancuernas','Aperturas con mancuerna','Aperturas inclinadas','Cruces en polea alta','Cruces en polea baja','Peck deck (máquina)','Press en máquina','Fondos en paralelas','Flexiones','Flexiones diamante','Pull-over'],
   'Espalda': ['Dominadas','Dominadas supinas','Jalón al pecho','Jalón agarre neutro','Jalón tras nuca','Remo con barra','Remo con mancuerna','Remo en punta (T-bar)','Remo en máquina','Remo en polea baja','Remo Gironda','Peso muerto','Pull-over','Face pull','Encogimientos (trapecio)','Hiperextensiones'],
@@ -1761,7 +1767,7 @@ const EXLIB = {
   'Gemelo': ['Gemelos de pie','Gemelos sentado','Gemelos en prensa','Elevación de talones con mancuerna','Gemelos a una pierna','Saltos a la comba'],
   'Abdominales': ['Crunch','Crunch en máquina','Elevación de piernas','Elevación de piernas colgado','Plancha','Plancha lateral','Rueda abdominal','Russian twist','Encogimientos en polea','Mountain climbers','Bicicleta','Toques a los talones']
 };
-function startOnboarding(){ obStep=0; _obGymDay='Lunes'; _obGymMuscle='Pecho'; $('#onboarding').classList.remove('hidden'); renderOnboarding(); }
+function startOnboarding(){ obStep=0; _obGymDay='Lunes'; _obGymMuscle='Pecho'; _rbReplaceIdx=-1; $('#onboarding').classList.remove('hidden'); renderOnboarding(); }
 function finishOnboarding(){ S.onboarded=true; save(); $('#onboarding').classList.add('hidden'); $('#onboarding').innerHTML=''; go(current||'habits'); }
 function obGo(n){ obStep=n; renderOnboarding(); window.scrollTo(0,0); $('#onboarding').scrollTop=0; }
 function obDots(active){
@@ -1867,8 +1873,14 @@ function buildRoutineHTML(){
     return `<div class="chip ${d===_obGymDay?'on gym':''}" onclick="obGymSelDay('${d}')">${d.slice(0,3)}${n?' · '+n:''}</div>`;
   }).join('');
   const selectedList = dayEx.length
-    ? dayEx.map((name,i)=>`<div class="ob-li"><span style="color:var(--muted2);font-weight:800;min-width:20px">${i+1}</span><span class="t">${esc(name)}</span><span class="del" onclick="obRemoveEx(${i})">×</span></div>`).join('')
+    ? dayEx.map((name,i)=>`<div class="ob-li ${_rbReplaceIdx===i?'replacing':''}">
+        <span style="color:var(--muted2);font-weight:800;min-width:20px">${i+1}</span>
+        <span class="t" style="cursor:pointer" onclick="obStartReplace(${i})">${esc(name)}</span>
+        <span class="del" onclick="obRemoveEx(${i})">×</span></div>`).join('')
     : '<div class="ob-sub" style="margin:0">Día de descanso. Toca ejercicios abajo para añadir.</div>';
+  const replaceBanner = _rbReplaceIdx>=0 && dayEx[_rbReplaceIdx]!==undefined
+    ? `<div class="rb-replacing">✏️ Cambiando el ejercicio <b>${_rbReplaceIdx+1}</b> («${esc(dayEx[_rbReplaceIdx])}»). Toca el nuevo abajo o escríbelo. <button onclick="obCancelReplace()">Cancelar</button></div>`
+    : '';
   const musclePills = Object.keys(EXLIB).map(m=>`<div class="chip ${m===_obGymMuscle?'on gym':''}" onclick="obGymSelMuscle('${m}')">${m}</div>`).join('');
   const exList = EXLIB[_obGymMuscle].map(name=>{
     const added = dayEx.includes(name);
@@ -1880,6 +1892,7 @@ function buildRoutineHTML(){
       <div style="font-weight:800;margin-bottom:10px">${_obGymDay} · ${dayEx.length} ejercicio${dayEx.length!==1?'s':''}</div>
       ${selectedList}
     </div>
+    ${replaceBanner}
     <div class="ob-sub" style="margin:16px 0 6px">Músculo</div>
     <div class="pillrow">${musclePills}</div>
     <div class="ob-sub" style="margin:14px 0 6px">Ejercicios de ${_obGymMuscle} — toca para añadir</div>
@@ -1890,10 +1903,15 @@ function buildRoutineHTML(){
     <div class="pillrow">${WORKOUT_DAYS.map(d=>`<div class="chip ${S.abs.days.includes(d)?'on gym':''}" onclick="obAbsToggle('${d}')">${d.slice(0,3)}</div>`).join('')}</div>`;
 }
 function rerenderBuilder(){ const el=$('#rbuild'); if(el) el.innerHTML=buildRoutineHTML(); }
-function obGymSelDay(d){ _obGymDay=d; rerenderBuilder(); }
+function obGymSelDay(d){ _obGymDay=d; _rbReplaceIdx=-1; rerenderBuilder(); }
 function obGymSelMuscle(m){ _obGymMuscle=m; rerenderBuilder(); }
+function obStartReplace(i){ _rbReplaceIdx = (_rbReplaceIdx===i? -1 : i); rerenderBuilder(); }
+function obCancelReplace(){ _rbReplaceIdx=-1; rerenderBuilder(); }
 function obToggleEx(name){
   const arr = S.routine[_obGymDay] || (S.routine[_obGymDay]=[]);
+  if(_rbReplaceIdx>=0 && arr[_rbReplaceIdx]!==undefined){   // modo cambiar: reemplaza en su hueco
+    arr[_rbReplaceIdx]=name; _rbReplaceIdx=-1; save(); rerenderBuilder(); return;
+  }
   const i=arr.indexOf(name);
   if(i>=0) arr.splice(i,1); else arr.push(name);
   save(); rerenderBuilder();
@@ -1902,10 +1920,13 @@ function obAddCustomEx(){
   const inp=$('#rbCustom'); if(!inp) return;
   const v=inp.value.trim(); if(!v) return;
   const arr=S.routine[_obGymDay]||(S.routine[_obGymDay]=[]);
+  if(_rbReplaceIdx>=0 && arr[_rbReplaceIdx]!==undefined){   // modo cambiar
+    arr[_rbReplaceIdx]=v; _rbReplaceIdx=-1; save(); rerenderBuilder(); return;
+  }
   if(!arr.includes(v)) arr.push(v);
   save(); rerenderBuilder();
 }
-function obRemoveEx(i){ (S.routine[_obGymDay]||[]).splice(i,1); save(); rerenderBuilder(); }
+function obRemoveEx(i){ (S.routine[_obGymDay]||[]).splice(i,1); if(_rbReplaceIdx===i)_rbReplaceIdx=-1; else if(_rbReplaceIdx>i)_rbReplaceIdx--; save(); rerenderBuilder(); }
 function obAbsToggle(d){ const i=S.abs.days.indexOf(d); if(i>=0)S.abs.days.splice(i,1); else S.abs.days.push(d); save(); rerenderBuilder(); }
 // hábitos
 let _obDiff='simple';
