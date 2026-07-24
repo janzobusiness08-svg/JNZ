@@ -147,13 +147,12 @@ svg{display:block;width:100%;overflow:visible}
   padding:20px 18px calc(20px + env(safe-area-inset-bottom));border:1px solid var(--line);
   border-bottom:none;max-height:88vh;overflow-y:auto;animation:up .25s cubic-bezier(.2,.9,.2,1)}
 @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.sheet h3{font-size:18px;margin-bottom:16px}
-.sheet-bar{position:sticky;top:0;background:var(--card);z-index:6;display:flex;align-items:center;
-  justify-content:center;margin:-20px -18px 10px;padding:12px 0 8px}
-.sheet-bar .handle{width:40px;height:4px;background:var(--line);border-radius:2px;margin:0}
-.sheet-x{position:absolute;right:14px;top:8px;width:34px;height:34px;border-radius:50%;background:var(--card2);
+.sheet{position:relative}
+.sheet h3{font-size:18px;margin-bottom:16px;padding-right:40px}
+.sheet .handle{width:40px;height:4px;background:var(--line);border-radius:2px;margin:0 auto 16px}
+.sheet-x{position:absolute;right:14px;top:14px;width:34px;height:34px;border-radius:50%;background:var(--card2);
   border:1px solid var(--line);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;
-  display:flex;align-items:center;justify-content:center}
+  display:flex;align-items:center;justify-content:center;z-index:3}
 .sheet-x:active{transform:scale(.9)}
 
 /* Toast */
@@ -1086,7 +1085,8 @@ function modal(html){
   $('#modalRoot').innerHTML =
     `<div class="overlay" onclick="if(event.target===this)closeModal()">
        <div class="sheet">
-         <div class="sheet-bar"><div class="handle"></div><button class="sheet-x" onclick="closeModal()" aria-label="Cerrar">✕</button></div>
+         <div class="handle"></div>
+         <button class="sheet-x" onclick="closeModal()" aria-label="Cerrar">✕</button>
          ${html}
        </div></div>`;
 }
@@ -1634,15 +1634,42 @@ const HELP = [
   {q:'¿Cómo cambio mi nombre o la intro?', k:'nombre intro cambiar ajustes',
    a:'En el botón <b>⚙️</b> de Hábitos, campo «Tu nombre». Es el que aparece en rojo en la intro de bienvenida.'},
   {q:'¿Cómo relleno todo de golpe?', k:'configuracion inicial rellenar rutina habitos onboarding',
-   a:'En el botón <b>⚙️</b> → <b>«🚀 Configuración rápida»</b>. Te lleva paso a paso: rutina de gym (a clics), hábitos, objetivos y finanzas. Puedes saltar cualquier paso.'}
+   a:'En el botón <b>⚙️</b> → <b>«🚀 Configuración rápida»</b>. Te lleva paso a paso: rutina de gym (a clics), hábitos, objetivos y finanzas. Puedes saltar cualquier paso.'},
+  {q:'¿Dónde veo mis PRs (récords)?', k:'pr records mis prs gym ejercicio marca',
+   a:'En <b>Gym</b>, botón <b>«🏆 Mis PRs»</b>. Muestra el mejor récord de cada ejercicio (los que marcaste como 🏆 PR), con su fecha. Así no tienes que buscar el entreno.'},
+  {q:'¿Cómo cierro un desplegable o ventana?', k:'cerrar ventana desplegable modal x salir atrapado',
+   a:'Toca la <b>✕</b> de la esquina superior derecha, o toca fuera de la ventana (en la zona oscura). Cualquiera de las dos lo cierra.'},
+  {q:'¿Cómo cambio de día en el gimnasio?', k:'gym dia semana cambiar lunes martes rutina',
+   a:'En <b>Gym</b>, arriba hay pastillas con los días (Lun-Dom). Toca el día que quieras para ver sus ejercicios. La app abre sola en el día de hoy.'},
+  {q:'¿Cómo pongo abdominales en un día?', k:'abdominales abs dias gym rutina',
+   a:'En <b>«Editar rutina»</b> o la config inicial, abajo hay «Días de abdominales». Toca los días que quieras (normalmente 3 por semana). Se añaden a esos días.'},
+  {q:'¿Cómo veo el progreso de un ejercicio?', k:'progreso ejercicio grafica comparativa peso gym',
+   a:'En <b>Gym → «Progreso por ejercicio»</b>. Elige el ejercicio en el desplegable y verás una gráfica con la evolución del peso y la comparativa con tu sesión anterior (▲/▼).'},
+  {q:'¿Cómo cambio el tiempo del temporizador?', k:'temporizador descanso tiempo personalizar minutos segundos',
+   a:'En el temporizador de Gym, toca un preset (30s/60s/90s/2min) o «Personalizar» para poner los minutos y segundos que quieras. Recuerda tu último tiempo elegido.'},
+  {q:'¿Cómo borro un hábito, tarea, objetivo o movimiento?', k:'borrar eliminar habito tarea objetivo movimiento entreno x',
+   a:'Cada elemento tiene una <b>×</b> a la derecha para borrarlo. En entrenos y movimientos también puedes <b>editar</b> (tocándolos o con «editar»).'},
+  {q:'¿Cómo edito un hábito ya creado?', k:'editar habito cambiar nombre dificultad',
+   a:'Los hábitos no se editan directamente: bórralo con la <b>×</b> y créalo de nuevo con el nombre o dificultad correctos. (Los entrenos y movimientos sí se editan.)'},
+  {q:'¿Cómo filtro las finanzas por periodo?', k:'finanzas periodo dia semana mes filtro balance',
+   a:'En <b>Finanzas</b>, arriba tienes «Día / Semana / Mes». Toca uno y el balance, ingresos, gastos y movimientos se filtran a ese periodo.'},
+  {q:'¿Qué pasa si no completo la meta de 5 hábitos?', k:'meta 5 no completo penalizacion racha',
+   a:'No pasa nada malo: no pierdes nada ni te penaliza. Simplemente no llegas a la meta de ese día. La racha cuenta los días con al menos 1 hábito hecho.'},
+  {q:'¿Necesito internet? ¿Mis datos son privados?', k:'internet offline privado datos nube conexion',
+   a:'No necesitas internet: la app funciona <b>offline</b> y todo se guarda <b>solo en tu móvil</b>, sin nube. Nadie más ve tus datos. (El botón de IA sí abre ChatGPT y necesita internet.)'},
+  {q:'¿Cómo comparto la app con un amigo?', k:'compartir amigo link instalar app pantalla inicio',
+   a:'Pásale el <b>enlace</b> de la app. Que lo abra en el móvil con Chrome/Safari y le dé a «Añadir a pantalla de inicio». Cada uno tendrá sus propios datos.'},
+  {q:'¿Cómo instalo o actualizo la app?', k:'instalar actualizar app pantalla inicio refrescar',
+   a:'Abre el enlace en el móvil → menú del navegador → «Añadir a pantalla de inicio». Se <b>actualiza sola</b>: cuando hay cambios, solo tienes que abrir/refrescar la app.'},
+  {q:'¿Qué es la intro con la ciudad de noche?', k:'intro bienvenida nombre ciudad noche ventana deep work',
+   a:'Es la pantalla de bienvenida con tu nombre y «vas a lograrlo». La ciudad de noche con una sola ventana encendida representa que, mientras todos duermen, tú eres el que trabaja en sus metas. 🌙'}
 ];
 function openHelp(){
   modal(`<h3>❓ Ayuda</h3>
-    <div class="sub">Escribe tu duda o toca un tema. Todo sobre cómo va la app.</div>
-    <input id="helpSearch" placeholder="Ej: cómo marcar un PR" autocomplete="off" oninput="renderHelp()" style="margin-bottom:14px">
+    <div class="sub">Toca cualquier tema para ver la explicación, o escribe tu duda para buscar.</div>
+    <input id="helpSearch" placeholder="Buscar… (ej: cómo marcar un PR)" autocomplete="off" oninput="renderHelp()" style="margin-bottom:14px">
     <div id="helpResults"></div>`);
   renderHelp();
-  setTimeout(()=>{ const i=$('#helpSearch'); if(i) i.focus(); },100);
 }
 function renderHelp(){
   const el=$('#helpResults'); if(!el) return;
