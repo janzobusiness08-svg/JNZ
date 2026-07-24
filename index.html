@@ -224,6 +224,20 @@ svg{display:block;width:100%;overflow:visible}
 .fab:active{transform:scale(.9)}
 @media(max-width:520px){.fab{right:18px}}
 .fab.gym{background:var(--gym)}.fab.goals{background:var(--obj);color:#06251a}.fab.fin{background:var(--fin);color:#3a2600}
+.helpbtn{position:fixed;bottom:calc(96px + env(safe-area-inset-bottom));left:calc(50% - 246px);
+  width:46px;height:46px;border-radius:50%;background:var(--card);border:1px solid var(--line);
+  color:var(--acc);font-size:22px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.4);z-index:40;
+  cursor:pointer;display:flex;align-items:center;justify-content:center}
+.helpbtn:active{transform:scale(.9)}
+@media(max-width:520px){.helpbtn{left:18px}}
+.help-item{background:var(--card2);border:1px solid var(--line);border-radius:11px;margin-bottom:8px;overflow:hidden}
+.help-item summary{padding:12px 13px;font-size:14px;font-weight:700;cursor:pointer;list-style:none;
+  display:flex;justify-content:space-between;align-items:center;gap:8px}
+.help-item summary::-webkit-details-marker{display:none}
+.help-item summary::after{content:'＋';color:var(--muted2);font-weight:700;flex-shrink:0}
+.help-item[open] summary::after{content:'－'}
+.help-a{padding:0 13px 13px;font-size:13px;color:var(--muted);line-height:1.55}
+.help-a b{color:var(--txt)}
 
 .miniedit{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline}
 .note-b{background:rgba(108,140,255,.09);border-left:3px solid var(--acc);padding:8px 11px;
@@ -519,6 +533,9 @@ svg{display:block;width:100%;overflow:visible}
 <button class="fab gym hidden" id="fabGym" onclick="openLogWorkout()">＋</button>
 <button class="fab goals hidden" id="fabGoals" onclick="openAddGoal()">＋</button>
 <button class="fab fin hidden" id="fabFin" onclick="openAddTx()">＋</button>
+
+<!-- Botón de ayuda -->
+<button class="helpbtn" onclick="openHelp()" aria-label="Ayuda">?</button>
 
 <!-- Bottom nav -->
 <div class="nav">
@@ -1543,6 +1560,64 @@ function renderCoachResults(){
 function renderCoachFood(){
   const el=$('#coachFood'); if(!el) return;
   el.innerHTML=(COACH.nutrition[_coachObjective]||[]).map(t=>`<div class="coach-tip" style="margin-bottom:9px">• ${esc(t)}</div>`).join('');
+}
+
+/* ============================================================
+   AYUDA (FAQ offline)
+   ============================================================ */
+const HELP = [
+  {q:'¿Cómo marco un PR o una serie Bilbo?', k:'pr record bilbo serie entreno gym peso',
+   a:'En <b>Gym → «Registrar entreno de hoy»</b>. En cada serie hay un botón que pone «Serie». Tócalo: una vez lo marca como <b>🏆 PR</b> (tu récord), otra vez como <b>🔁 Bilbo</b> (más reps y menos peso, para fuerza), y otra vez vuelve a normal. En el historial verás la etiqueta 🏆/🔁.'},
+  {q:'¿Cómo funcionan la XP y los niveles?', k:'xp experiencia nivel puntos habitos',
+   a:'Cada hábito diario que marcas suma XP: <b>Simple = +5</b>, <b>Bueno = +10</b>. Cada <b>100 XP subes de nivel</b>, sin tope. Las tareas del día NO dan XP.'},
+  {q:'¿Qué es la meta diaria de 5?', k:'meta diaria 5 minimo habitos anillo',
+   a:'Es completar al menos <b>5 hábitos</b> al día. El anillo verde de arriba se va llenando según los que marcas.'},
+  {q:'¿Diferencia entre Hábitos y Tareas?', k:'habitos tareas diferencia dia',
+   a:'<b>Hábitos diarios</b>: sí o sí cada día, dan XP y cuentan para la meta. <b>Tareas de hoy</b>: recordatorios sueltos, opcionales, sin XP. Las tareas sin fecha se borran al acabar el día; las que tienen fecha se quedan hasta ese día.'},
+  {q:'¿Cómo pongo fecha y hora a una tarea?', k:'tarea fecha hora recordatorio calendario',
+   a:'Al añadir una tarea (botón ＋ en «Tareas de hoy») verás campos de <b>Fecha</b> y <b>Hora</b> opcionales. Si pones fecha, la tarea se guarda hasta ese día y se ordena por cercanía; si pasa la hora sin hacerla, sale en rojo.'},
+  {q:'¿Cómo creo o edito mi rutina?', k:'rutina gym editar crear ejercicios musculo dia',
+   a:'En <b>Gym → «Editar rutina»</b> (o en la configuración inicial). Eliges un <b>día</b>, luego un <b>músculo</b>, y tocas los ejercicios para añadirlos. Si es uno raro, lo escribes en «¿Un ejercicio específico?». Toca de nuevo un ejercicio para quitarlo.'},
+  {q:'¿Cómo registro un entreno?', k:'registrar entreno gym series kg reps notas',
+   a:'En <b>Gym → «Registrar entreno de hoy»</b>. Añade series con «+ Serie», mete kg y reps, marca el tipo si quieres (PR/Bilbo) y puedes escribir notas. Se guarda en el historial y en las gráficas de progreso.'},
+  {q:'¿Para qué sirve el temporizador de descanso?', k:'temporizador descanso series cronometro sonido',
+   a:'En Gym, la barrita <b>«⏱️ Descanso entre series»</b>. Se despliega al tocarla. Elige el tiempo (30s/60s/90s/2min o personalizado) y dale a Iniciar. Al acabar suena un pitido y vibra. Recuerda subir el volumen del móvil.'},
+  {q:'¿Qué es el Coach y el botón de IA?', k:'coach ia ejercicios alternativas comida nutricion chatgpt',
+   a:'En Gym, el botón <b>«🤖 Coach»</b>. Tiene una base de ejercicios (técnica y alternativas) y consejos de comida, todo offline. El botón verde <b>«Preguntar a una IA»</b> abre ChatGPT con tu contexto para dudas sueltas.'},
+  {q:'¿Qué es el diario de Wins?', k:'wins win objetivos diario bueno dia',
+   a:'En <b>Objetivos</b>. Una win es algo bueno que te ha pasado hoy, aunque sea pequeño. La apuntas (opcional) y se van acumulando con su fecha para que mires atrás y recuerdes lo bueno.'},
+  {q:'¿Cómo uso el calendario?', k:'calendario objetivos vacaciones eventos notas',
+   a:'En <b>Objetivos → Calendario</b>. Toca cualquier día para escribir una nota (vacaciones, viajes, eventos). Los días con nota se marcan en verde con un puntito.'},
+  {q:'¿Cómo van las finanzas y los límites?', k:'finanzas dinero gastos ingresos categorias limite rojo',
+   a:'En <b>Finanzas</b>. Añade movimientos con ＋, elige categoría. Puedes crear categorías y ponerles un <b>límite</b> desde «Categorías». Si te pasas del límite, se pone en <b>rojo</b>. Toca un movimiento para editarlo.'},
+  {q:'¿Dónde veo mis estadísticas de hábitos?', k:'estadisticas habitos grafica racha progreso',
+   a:'En Hábitos, el botón <b>📊</b> de arriba. Verás tu nivel, XP total, racha de días, % completado hoy y una gráfica de los últimos 14 días.'},
+  {q:'¿Cómo hago copia de seguridad? ¿Pierdo datos?', k:'copia seguridad backup exportar importar datos perder movil',
+   a:'En el botón <b>⚙️</b> de Hábitos: <b>Exportar</b> guarda un archivo con todos tus datos; <b>Importar</b> los restaura. Tus datos viven en este móvil: no se pierden al actualizar la app, pero sí si borras el navegador o cambias de móvil sin copia. Haz una copia de vez en cuando.'},
+  {q:'¿Cómo cambio mi nombre o la intro?', k:'nombre intro cambiar ajustes',
+   a:'En el botón <b>⚙️</b> de Hábitos, campo «Tu nombre». Es el que aparece en rojo en la intro de bienvenida.'},
+  {q:'¿Cómo relleno todo de golpe?', k:'configuracion inicial rellenar rutina habitos onboarding',
+   a:'En el botón <b>⚙️</b> → <b>«🚀 Configuración rápida»</b>. Te lleva paso a paso: rutina de gym (a clics), hábitos, objetivos y finanzas. Puedes saltar cualquier paso.'}
+];
+function openHelp(){
+  modal(`<h3>❓ Ayuda</h3>
+    <div class="sub">Escribe tu duda o toca un tema. Todo sobre cómo va la app.</div>
+    <input id="helpSearch" placeholder="Ej: cómo marcar un PR" autocomplete="off" oninput="renderHelp()" style="margin-bottom:14px">
+    <div id="helpResults"></div>`);
+  renderHelp();
+  setTimeout(()=>{ const i=$('#helpSearch'); if(i) i.focus(); },100);
+}
+function renderHelp(){
+  const el=$('#helpResults'); if(!el) return;
+  const q=(($('#helpSearch')||{}).value||'').toLowerCase().trim();
+  let list=HELP;
+  if(q){
+    const words=q.split(/\s+/).filter(w=>w.length>2);
+    list=HELP.filter(h=>{ const hay=(h.q+' '+h.k).toLowerCase();
+      return hay.includes(q) || words.some(w=>hay.includes(w)); });
+  }
+  if(!list.length){ el.innerHTML='<div class="empty" style="padding:16px">No encuentro esa duda. Prueba otras palabras.</div>'; return; }
+  el.innerHTML=list.map(h=>`<details class="help-item"><summary>${esc(h.q)}</summary><div class="help-a">${h.a}</div></details>`).join('');
 }
 
 /* ============================================================
